@@ -1,0 +1,67 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using refca.Models
+@inject UserManager<ApplicationUser> UserManager
+
+<nav class="navbar navbar-default navbar-static-top top-bar" role="navigation" style="margin-bottom: 0">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <i class="fa fa-bars fa-lg" aria-hidden="true" title="Toggle navigation"></i>
+            <span class="sr-only">Toggle navigation</span>
+        </button>
+        <a class="navbar-brand" href="#">
+            <img src="~/Assets/img/logo_uabc.png" class="img-logo" />
+        </a>
+    </div>
+    <!-- /.navbar-header -->
+    <ul class="nav navbar-top-links navbar-right">
+        <li class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                <img src="~/Assets/img/cima.png" class="img-circle img-responsive img-user">
+                <span>@UserManager.GetUserName(User)</span> <i class="fa fa-caret-down"></i>
+            </a>
+            <ul class="dropdown-menu">
+                <li>
+                    <a asp-controller="Account" asp-action="overview"><i class="fa fa-home fa-fw"></i> Home</a>
+                </li>
+                <li>
+                    <a asp-controller="Account" asp-action="Profile"><i class="fa fa-user fa-fw"></i> Perfil</a>
+                </li>
+                <li>
+                    <form asp-controller="Account" asp-action="Logout" method="post">
+                        <button asp-controller="Account" asp-action="Logout" class="btn-logout" type="submit"><i class="fa fa-sign-out fa-fw"></i> Logout</button>
+                    </form>
+                </li>
+            </ul>
+            <!-- /.dropdown-user -->
+        </li>
+        <!-- /.dropdown -->
+    </ul>
+    <!-- /.navbar-top-links -->
+    <div class="navbar-default sidebar" role="navigation">
+        <div class="sidebar-nav navbar-collapse">
+            <ul class="nav navbar-side-links" id="side-menu">
+                <li>
+                    <div class="productivity">
+                        <h4 class="text-muted">Productividad</h4>
+                    </div>
+                </li>
+                <li><a asp-controller="Article" asp-action="List"><i class="fa fa-book fa-fw" aria-hidden="true"></i> Artículos</a></li>
+                <li><a asp-controller="Chapterbook" asp-action="List"><i class="fa fa-book fa-fw" aria-hidden="true"></i> Capítulos</a></li>
+                <li><a asp-controller="Research" asp-action="List"><i class="fa fa-book fa-fw" aria-hidden="true"></i> Investigaciones</a></li>
+                <li><a asp-controller="Book" asp-action="List"><i class="fa fa-book fa-fw" aria-hidden="true"></i> Libros</a></li>
+                <li><a asp-controller="Presentation" asp-action="List"><i class="fa fa-book fa-fw" aria-hidden="true"></i> Ponencias</a></li>
+                <li><a asp-controller="Magazine" asp-action="List"><i class="fa fa-book fa-fw" aria-hidden="true"></i> Revistas</a></li>
+                <li><a asp-controller="Thesis" asp-action="List"><i class="fa fa-book fa-fw" aria-hidden="true"></i> Tesis</a></li>
+                <li>
+                    <div class="productivity">
+                        <h4 class="text-muted">Cuenta</h4>
+                    </div>
+                </li>
+                <li><a asp-controller="Account" asp-action="Profile"><i class="fa fa-user fa-fw" aria-hidden="true"></i> Editar perfil</a></li>
+                <li><a asp-controller="Account" asp-action="ChangePassword"><i class="fa fa-lock fa-fw" aria-hidden="true"></i> Cambiar contraseña</a></li>
+            </ul>
+        </div>
+        <!-- /.sidebar-collapse -->
+    </div>
+    <!-- /.navbar-static-side -->
+</nav>

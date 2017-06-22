@@ -1,0 +1,125 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using refca.Models
+@inject UserManager<ApplicationUser> UserManager
+
+<nav class="navbar navbar-default navbar-static-top top-bar" role="navigation" style="margin-bottom: 0">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <i class="fa fa-bars fa-lg" aria-hidden="true" title="Toggle navigation"></i>
+            <span class="sr-only">Toggle navigation</span>
+        </button>
+        <a class="navbar-brand" href="#">
+            <img src="~/Assets/img/logo_uabc.png" class="img-logo" />
+        </a>
+    </div>
+    <!-- /.navbar-header -->
+    <ul class="nav navbar-top-links navbar-right">
+        <li class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                <img src="~/Assets/img/cima.png" class="img-circle img-responsive img-user">
+                <span>@UserManager.GetUserName(User)</span> <i class="fa fa-caret-down"></i>
+            </a>
+            <ul class="dropdown-menu">
+                <li>
+                    <a asp-controller="Account" asp-action="overview"><i class="fa fa-home fa-fw"></i> Home</a>
+                </li>
+                <li>
+                    <form asp-controller="Account" asp-action="Logout" method="post">
+                        <button asp-controller="Account" asp-action="Logout" class="btn-logout" type="submit"><i class="fa fa-sign-out fa-fw"></i> Logout</button>
+                    </form>
+                </li>
+            </ul>
+            <!-- /.dropdown-user -->
+        </li>
+        <!-- /.dropdown -->
+    </ul>
+    <!-- /.navbar-top-links -->
+    <div class="navbar-default sidebar" role="navigation">
+        <div class="sidebar-nav navbar-collapse">
+            <ul class="nav navbar-side-links" id="side-menu">
+                <li>
+                    <div class="productivity">
+                        <h4 class="text-muted">Productividad</h4>
+                    </div>
+                </li>
+                <li>
+                    <a href="#"><i class="fa fa-book" aria-hidden="true"></i> Artículos<span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level">
+                        <li><a asp-controller="Article" asp-action="ListAll"><i class="fa fa-check text-success" aria-hidden="true"></i> Artículos aprobados</a></li>
+                        <li><a asp-controller="Article" asp-action="ListUnapproved"><i class="fa fa-remove text-danger text-danger" aria-hidden="true"></i> Artículos no aprobados</a></li>
+                    </ul>
+                    <!-- /.nav-second-level -->
+                </li>
+                <li>
+                    <a href="#"><i class="fa fa-book" aria-hidden="true"></i> Capitulos de libro<span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level">
+                        <li><a asp-controller="Chapterbook" asp-action="ListAll"><i class="fa fa-check text-success" aria-hidden="true"></i> Capítulos aprobadas</a></li>
+                        <li><a asp-controller="Chapterbook" asp-action="ListUnapproved"><i class="fa fa-remove text-danger" aria-hidden="true"></i> Capítulos no aprobadas</a></li>
+                    </ul>
+                    <!-- /.nav-second-level -->
+                </li>
+                <li>
+                    <a href="#"><i class="fa fa-book" aria-hidden="true"></i> Investigaciones<span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level">
+                        <li><a asp-controller="Research" asp-action="ListAll"><i class="fa fa-check text-success" aria-hidden="true"></i> Investigaciones aprobadas</a></li>
+                        <li><a asp-controller="Research" asp-action="ListUnapproved"><i class="fa fa-remove text-danger" aria-hidden="true"></i> Investigaciones no aprobadas</a></li>
+                    </ul>
+                    <!-- /.nav-second-level -->
+                </li>
+                <li>
+                    <a href="#"><i class="fa fa-book" aria-hidden="true"></i> Libros<span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level">
+                        <li><a asp-controller="Book" asp-action="ListAll"><i class="fa fa-check text-success" aria-hidden="true"></i> Libros aprobados</a></li>
+                        <li><a asp-controller="Book" asp-action="ListUnapproved"><i class="fa fa-remove text-danger" aria-hidden="true"></i> Libros no aprobados</a></li>
+                    </ul>
+                    <!-- /.nav-second-level -->
+                </li>
+                <li>
+                    <a href="#"><i class="fa fa-book" aria-hidden="true"></i> Ponencias<span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level">
+                        <li><a asp-controller="Presentation" asp-action="ListAll"><i class="fa fa-check text-success" aria-hidden="true"></i> Ponencias aprobadas</a></li>
+                        <li><a asp-controller="Presentation" asp-action="ListUnapproved"><i class="fa fa-remove text-danger" aria-hidden="true"></i> Ponencias no aprobadas</a></li>
+                    </ul>
+                    <!-- /.nav-second-level -->
+                </li>
+                <li>
+                    <a href="#"><i class="fa fa-book" aria-hidden="true"></i> Revistas<span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level">
+                        <li><a asp-controller="Magazine" asp-action="ListAll"><i class="fa fa-check text-success" aria-hidden="true"></i> Revistas aprobadas</a></li>
+                        <li><a asp-controller="Magazine" asp-action="ListUnapproved"><i class="fa fa-remove text-danger" aria-hidden="true"></i> Revistas no aprobadas</a></li>
+                    </ul>
+                    <!-- /.nav-second-level -->
+                </li>
+                <li>
+                    <a href="#"><i class="fa fa-book" aria-hidden="true"></i> Tesis<span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level">
+                        <li><a asp-controller="Thesis" asp-action="ListAll"><i class="fa fa-check text-success" aria-hidden="true"></i> Tesis aprobadas</a></li>
+                        <li><a asp-controller="Thesis" asp-action="ListUnapproved"><i class="fa fa-remove text-danger" aria-hidden="true"></i> Tesis no aprobadas</a></li>
+                    </ul>
+                    <!-- /.nav-second-level -->
+                </li>
+               <li class="divider"></li>
+                <li>
+                    <div class="productivity">
+                        <h4 class="text-muted">Administración</h4>
+                    </div>
+                </li>
+                <li>
+                    <a asp-controller="Teacher" asp-action="List"><i class="fa fa-users" aria-hidden="true"></i> Docentes</a>
+                </li>
+                <li>
+                    <a asp-controller="Admin" asp-action="Administrators"><i class="fa fa-user-secret" aria-hidden="true"></i> Administradores</a>
+                </li>
+                <li>
+                    <div class="productivity">
+                        <h4 class="text-muted">Cuenta</h4>
+                    </div>
+                </li>
+                <li><a asp-controller="Account" asp-action="ChangePassword"><i class="fa fa-lock fa-fw" aria-hidden="true"></i> Cambiar contraseña</a></li>
+                <li><a asp-controller="Account" asp-action="ResetPassword"><i class="text-danger fa fa-lock fa-fw" aria-hidden="true"></i> Reestablecer contraseña</a></li>
+            </ul>
+        </div>
+        <!-- /.sidebar-collapse -->
+    </div>
+    <!-- /.navbar-static-side -->
+</nav>
