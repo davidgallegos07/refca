@@ -1,0 +1,46 @@
+﻿<div class="panel panel-default container">
+    <div class="panel-body">
+        <div class="row">
+            <div class="panel-title">
+                <div class="col-md-12">
+                    <h3>{{mdetails?.title}}</h3>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="col-md-6"><strong>Index</strong></div>
+                <div class="col-md-6">{{mdetails?.index}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>ISSN</strong></div>
+                <div class="col-md-6">{{mdetails?.issn}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Editor</strong></div>
+                <div class="col-md-6">{{mdetails?.editor}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Edición</strong></div>
+                <div class="col-md-6">{{mdetails?.edition}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Archivo</strong></div>
+                <div class="col-md-6">
+                    <a target="_blank" href="{{mdetails?.magazinePath}}"><i class="fa fa-download"></i> Descargar</a>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Autor(es)</strong></div>
+                <div class="col-md-6">
+                    <div *ngFor="let teacher of mdetails?.teacherMagazines">
+                        {{teacher.name}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

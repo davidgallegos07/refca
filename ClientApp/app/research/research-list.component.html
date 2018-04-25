@@ -1,0 +1,88 @@
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-12 col-md-12 main">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" class="form-control" [(ngModel)]="query.searchTerm" (keyup.enter)="onFilterChange()" placeholder="Buscar Investigación  Por Título, Codigo o Sector">
+                        <span class="input-group-btn">
+                        <button (click)="onFilterChange()" class="btn btn-link" type="button"><i class="fa fa-search" aria-hidden="true"></i></button>
+                        </span>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <select name="academicBodyId" id="academicBodyId" class="form-control"
+                        [(ngModel)]="query.academicBodyId" (change)="onFilterChange()">
+                            <option [ngValue]="undefined">Cuerpo académico</option>
+                            <option *ngFor="let ab of academicBodies" value="{{ab.id}}">{{ab.name}}</option>                           
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <select name="researchLineId" id="researchLineId" class="form-control" [(ngModel)]="query.researchLineId" (change)="onFilterChange()">
+                            <option [ngValue]="undefined">Línea de investigación</option>
+                            <option *ngFor="let rl of researchLines" value="{{rl.id}}">{{rl.name}}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <select name="knowledgeAreaId" id="knowledgeAreaId" class="form-control" [(ngModel)]="query.knowledgeAreaId" (change)="onFilterChange()">
+                            <option [ngValue]="undefined">Área de conocimiento</option>
+                            <option *ngFor="let ka of knowledgeAreas" value="{{ka.id}}">{{ka.name}}</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <loading-spinner *ngIf="loading"></loading-spinner>
+            <div *ngFor="let r of research.items">
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <div class="media">
+                            <div class="media-left">
+                                <img class="media-object" src="../../../wwwroot/Assets/img/cima.png" alt="..." height="50px" width="50px">
+                            </div>
+                            <div class="media-body">
+                                <a [routerLink]="['/research',r.id]">
+                                    <h4 class="media-heading">{{r.title}}</h4>
+                                </a>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="pull-left">
+                                <div class="list-group-item-text">
+                                    <span *ngFor="let t of r.teacherResearch|slice:0:2">
+                                        <a [routerLink]="['/teachers',t.id]">{{t.name}}</a>
+                                        <span *ngIf="r.teacherResearch.length > 1">,</span>
+                                    </span>
+                                    <span *ngIf="r.teacherResearch.length > 1">...</span>
+                                    <span class="list-group-item-date">{{r.addedDate | date}}</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <a target="_blank" href="{{r?.researchPath}}"><i class="fa fa-download"></i> 
+                                    <span>Descargar</span> 
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <ul *ngIf="pager.pages && pager.pages.length" class="pagination">
+                <li [ngClass]="{disabled:pager.currentPage === 1}">
+                    <a (click)="onFilterChange(pager.currentPage - 1)">&laquo;</a>
+                </li>
+                <li *ngFor="let page of pager.pages" [ngClass]="{active:pager.currentPage === page}">
+                    <a (click)="onFilterChange(page)">{{page}}</a>
+                </li>
+                <li [ngClass]="{disabled:pager.currentPage === pager.totalPages}">
+                    <a (click)="onFilterChange(pager.currentPage + 1)">&raquo;</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="well" *ngIf="hasResearch">
+        No se encontraron resultados
+    </div>
+</div>

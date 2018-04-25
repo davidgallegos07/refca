@@ -16,6 +16,7 @@ namespace refca.Models
         public DateTime UpdatedDate { get; set; }
         public string ArticlePath { get; set; }
         public bool IsApproved { get; set; }
+        public string Owner { get; set; }
 
         public ICollection<TeacherArticle> TeacherArticles { get; set; }
     }

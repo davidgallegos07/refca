@@ -1,0 +1,46 @@
+﻿<div class="panel panel-default container">
+    <div class="panel-body">
+        <div class="row">
+            <div class="panel-title">
+                <div class="col-md-12">
+                    <h3>{{cbdetails?.title}}</h3>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="col-md-6"><strong>Título de libro</strong></div>
+                <div class="col-md-6">{{cbdetails?.bookTitle}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>ISBN</strong></div>
+                <div class="col-md-6">{{cbdetails?.isbn}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Fecha de publicación</strong></div>
+                <div class="col-md-6">{{cbdetails?.publishedDate | date}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Editorial</strong></div>
+                <div class="col-md-6">{{cbdetails?.editorial}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Archivo</strong></div>
+                <div class="col-md-6">
+                    <a target="_blank" href="{{cbdetails?.chapterbookPath}}"><i class="fa fa-download"></i> Descargar</a>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Autor(es)</strong></div>
+                <div class="col-md-6">
+                    <div *ngFor="let teacher of cbdetails?.teacherChapterbooks">
+                        {{teacher.name}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

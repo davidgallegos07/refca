@@ -1,33 +1,6 @@
 ﻿$(document).ready(function () {
-    $('#tableEntity').DataTable({
-        "language": {
-            "emptyTable": "No se encontraron elementos",
-            "info": "_TOTAL_ elementos",
-            "infoEmpty": "",
-            "infoFiltered": "(filtrado de un total de _MAX_ entradas)",
-            "infoPostFix": "",
-            "thousands": ",",
-            "lengthMenu": "Mostrar _MENU_ elementos",
-            "loadingRecords": "Cargando...",
-            "processing": "Procesando...",
-            "search": "Buscar:",
-            "zeroRecords": "No se encontraron coincidencias",
-            "paginate": {
-                "first": "Primera",
-                "last": "Ultima",
-                "next": "Siguiente",
-                "previous": "Anterior"
-            },
-            "aria": {
-                "sortAscending": ": activar para ordenar columnas ascendentes",
-                "sortDescending": ": activar para ordenar columnas descendentes"
-            }
-        },
-        responsive: true
-    });
-
-    $('.js-delete').submit(function (e) {
-        var currentForm = this;
+    $('tbody').on('click', '.js-delete', function (e) {
+        var currentForm = this; 
         e.preventDefault();
         bootbox.dialog({
             message: "¿Estas seguro que quieres eliminar este elemento?",
@@ -49,9 +22,9 @@
                 }
             }
         });
-
     });
-    $('.js-approved').submit(function (e) {
+
+    $('tbody').on('click', '.js-approved', function (e) {
         var currentForm = this;
         e.preventDefault();
         bootbox.dialog({
@@ -74,7 +47,6 @@
                 }
             }
         });
-
     });
-    $('[data-toggle="tooltip"]').tooltip(); 
+    $('[data-toggle="tooltip"]').tooltip();
 });

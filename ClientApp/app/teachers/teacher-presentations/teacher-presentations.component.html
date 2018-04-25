@@ -1,0 +1,48 @@
+<div class="tab-pane" id="presentations">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                <input type="text" class="form-control" [(ngModel)]="query.searchTerm" (keyup.enter)="onFilterChange()" placeholder="Buscar Presentación Por Título o Congreso">
+            </div>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Congreso</th>
+                    <th>Fecha de Edición</th>
+                    <th>Archivo</th>
+                    <th>Autor(es)</th>
+                </tr>
+            </thead>
+            <tbody id="items">
+                <tr *ngFor="let p of presentations.items">
+                    <td>{{p?.title}}</td>
+                    <td>{{p?.congress}}</td>
+                    <td>{{p?.editionDate | date}}</td>
+                    <td>
+                        <a target="_blank" href="{{p?.presentationPath}}"><i class="fa fa-download"></i> 
+                            <span>Descargar</span> 
+                        </a>
+                    </td>
+                    <td>
+                        <p *ngFor="let teacher of p.teacherPresentations">{{teacher.name}}</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <ul *ngIf="pager.pages  && pager.pages.length" class="pagination">
+            <li [ngClass]="{disabled:pager.currentPage === 1}">
+                <a (click)="onFilterChange(pager.currentPage - 1)">&laquo;</a>
+            </li>
+            <li *ngFor="let page of pager.pages" [ngClass]="{active:pager.currentPage === page}">
+                <a (click)="onFilterChange(page)">{{page}}</a>
+            </li>
+            <li [ngClass]="{disabled:pager.currentPage === pager.totalPages}">
+                <a (click)="onFilterChange(pager.currentPage + 1)">&raquo;</a>
+            </li>
+        </ul>
+    </div>
+</div>

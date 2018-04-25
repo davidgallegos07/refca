@@ -54,10 +54,6 @@ namespace refca.Models.BookViewModels
         [StringLength(100, ErrorMessage = "Mínimo {2} caracteres, Máximo {1} caracteres", MinimumLength = 3)]
         [Display(Name = "Género")]
         public string Genre { get; set; }
-
-        [Display(Name = "Archivo de libro")]
-        public IFormFile BookFile { get; set; }
-
         public IEnumerable<Teacher> Teachers { get; set; }
         public List<string> TeacherIds { get; set; }
         public BookViewModel()

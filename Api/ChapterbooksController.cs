@@ -6,36 +6,44 @@ using Microsoft.AspNetCore.Mvc;
 using refca.Data;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
-using refca.Dtos;
+using refca.Resources;
+using refca.Repositories;
+using refca.Resources.QueryResources;
+using refca.Models;
+using refca.Models.QueryFilters;
+using Microsoft.AspNetCore.Authorization;
+using refca.Models.Identity;
+using refca.Resources.TeacherQueryResources;
 
 namespace refca.Api
+
 {
     [Route("api/[controller]")]
     public class ChapterbooksController : Controller
     {
-        private ApplicationDbContext _context;
+        private RefcaDbContext _context;
+        private readonly IMapper mapper;
+        private readonly IChapterbookRepository _chapterbookRepository;
 
-        public ChapterbooksController(ApplicationDbContext context)
+        public ChapterbooksController(RefcaDbContext context, IMapper mapper, IChapterbookRepository _chapterbookRepository)
         {
+            this._chapterbookRepository = _chapterbookRepository;
+            this.mapper = mapper;
             _context = context;
         }
 
-        // GET: api/chapterbooks
+        // GET: api/chapterbooks?{query}
         [HttpGet]
-        public IEnumerable<ChapterbookWithTeachersDto> Get()
+        public async Task<QueryResultResource<ChapterbookResource>> GetChapterbooks(TeacherChapterbookQueryResource filterResource)
         {
-            var chapterbooks = _context.Chapterbooks
-                 .Include(tp => tp.TeacherChapterbooks)
-                     .ThenInclude(t => t.Teacher)
-                 .Where(p => p.IsApproved == true)
-                 .OrderBy(d => d.AddedDate)
-                 .ToList();
-                chapterbooks.ForEach(chapterbook => chapterbook.TeacherChapterbooks = chapterbook.TeacherChapterbooks.OrderBy(o => o.Order).ToList());
+            var filter = mapper.Map<TeacherChapterbookQueryResource, ChapterbookQuery>(filterResource);
+            var queryResult = await _chapterbookRepository.GetChapterbooks(filter);
 
-           return Mapper.Map<IEnumerable<ChapterbookWithTeachersDto>>(chapterbooks);
+            return mapper.Map<QueryResult<Chapterbook>, QueryResultResource<ChapterbookResource>>(queryResult);
         }
 
         // GET: api/chapterbooks/count
+
         [HttpGet("Count")]
         public async Task<IActionResult> GetNumberOfchapterbooks()
         {
@@ -52,12 +60,13 @@ namespace refca.Api
                    .ThenInclude(t => t.Teacher)
                 .Where(p => p.IsApproved == true)
                 .SingleOrDefaultAsync(t => t.Id == id);
-                chapterbook.TeacherChapterbooks = chapterbook.TeacherChapterbooks.OrderBy(o => o.Order).ToList();
 
             if (chapterbook == null)
                 return NotFound();
 
-            return Ok(Mapper.Map<ChapterbookWithTeachersDto>(chapterbook));
+            chapterbook.TeacherChapterbooks = chapterbook.TeacherChapterbooks.OrderBy(o => o.Order).ToList();
+
+            return Ok(mapper.Map<ChapterbookResource>(chapterbook));
         }
     }
 }

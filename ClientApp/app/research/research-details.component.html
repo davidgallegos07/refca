@@ -1,0 +1,57 @@
+﻿<div class="panel panel-default container">
+    <div class="panel-body">
+        <div class="row">
+            <div class="panel-title">
+                <div class="col-md-12">
+                    <h3>{{rdetails?.title}}</h3>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Codigo</strong></div>
+                <div class="col-md-6">{{rdetails?.code}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong> Tipo de investigación</strong></div>
+                <div class="col-md-6">{{rdetails?.researchType}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong> Sector</strong></div>
+                <div class="col-md-6">{{rdetails?.sector}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong> Inicio de investigación</strong></div>
+                <div class="col-md-6">{{rdetails?.initialPeriod}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong> Final de investigación</strong></div>
+                <div class="col-md-6">{{rdetails?.finalPeriod}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong> Duración de investigación (Años)</strong></div>
+                <div class="col-md-6">{{rdetails?.researchDuration}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Archivo</strong></div>
+                <div class="col-md-6">
+                    <a target="_blank" href="{{rdetails?.researchPath}}"><i class="fa fa-download"></i> Descargar</a>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Autor(es)</strong></div>
+                <div class="col-md-6">
+                    <div *ngFor="let teacher of rdetails?.teacherResearch">
+                        {{teacher.name}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

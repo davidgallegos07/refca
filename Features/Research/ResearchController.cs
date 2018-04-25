@@ -17,7 +17,7 @@ using refca.Models.BookViewModels;
 using refca.Models.ResearchViewModels;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Text.RegularExpressions;
-using refca.Dtos;
+using refca.Resources;
 using AutoMapper;
 using System.Collections.Generic;
 
@@ -26,68 +26,25 @@ namespace refca.Features.Research
     [Authorize]
     public class ResearchController : Controller
     {
-        private ApplicationDbContext _context;
+        private RefcaDbContext _context;
         private IHostingEnvironment _environment;
         private UserManager<ApplicationUser> _userManager;
+        private readonly IMapper mapper;
 
-        public ResearchController(ApplicationDbContext context, UserManager<ApplicationUser> userManager,
-            IHostingEnvironment environment)
+        public ResearchController(RefcaDbContext context, UserManager<ApplicationUser> userManager,
+            IHostingEnvironment environment, IMapper mapper)
         {
+            this.mapper = mapper;
             _context = context;
             _userManager = userManager;
             _environment = environment;
         }
 
-        // GET: /Research/ListAll
+        // GET: /Research/Manage
         [Authorize(Roles = Roles.Admin)]
-        public async Task<IActionResult> ListAll(string returnUrl = null)
+        public IActionResult Manage()
         {
-            ViewData["ReturnUrl"] = returnUrl;
-
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
-
-            var research = await _context.Research
-                .Include(tt => tt.TeacherResearch)
-                    .ThenInclude(t => t.Teacher)
-                .Include(r => r.ResearchLine)
-                .Include(k => k.KnowledgeArea)
-                .Include(a => a.AcademicBody)
-                .Include(ac => ac.AcademicBody.ConsolidationGrade)
-                .Where(p => p.IsApproved == true)
-                .OrderBy(d => d.AddedDate)
-                .ToListAsync();
-                research.ForEach(researchi => researchi.TeacherResearch = researchi.TeacherResearch.OrderBy(o => o.Order).ToList());
-
-            var results = Mapper.Map<IEnumerable<ResearchWithTeachersDto>>(research);
-            return View(results);
-        }
-
-        // GET: /Research/ListUnapproved
-        [Authorize(Roles = Roles.Admin)]
-        public async Task<IActionResult> ListUnapproved(string returnUrl = null)
-        {
-            ViewData["ReturnUrl"] = returnUrl;
-
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
-
-            var research = await _context.Research
-                .Include(tr => tr.TeacherResearch)
-                    .ThenInclude(t => t.Teacher)
-                .Include(r => r.ResearchLine)
-                .Include(k => k.KnowledgeArea)
-                .Include(a => a.AcademicBody)
-                .Include(ac => ac.AcademicBody.ConsolidationGrade)
-                .Where(p => p.IsApproved == false)
-                .OrderBy(d => d.AddedDate)
-                .ToListAsync();
-                research.ForEach(researchi => researchi.TeacherResearch = researchi.TeacherResearch.OrderBy(o => o.Order).ToList());                
-
-            var results = Mapper.Map<IEnumerable<ResearchWithTeachersDto>>(research);
-            return View(results);
+            return View();
         }
 
         // GET: /Research/IsApproved
@@ -101,7 +58,7 @@ namespace refca.Features.Research
 
             var researchInDb = await _context.Research.SingleOrDefaultAsync(t => t.Id == id);
             if (researchInDb == null)
-                return NotFound();
+                return View("NotFound");
 
             if (ModelState.IsValid)
             {
@@ -117,7 +74,7 @@ namespace refca.Features.Research
                 await _context.SaveChangesAsync();
             }
 
-            return RedirectToAction(nameof(ResearchController.ListUnapproved));
+            return RedirectToAction(nameof(ResearchController.Manage));
         }
 
         // GET: /Research/List 
@@ -138,9 +95,9 @@ namespace refca.Features.Research
                 .Include(ac => ac.AcademicBody.ConsolidationGrade)
                 .OrderBy(d => d.AddedDate)
                 .ToListAsync();
-                research.ForEach(researchi => researchi.TeacherResearch = researchi.TeacherResearch.OrderBy(o => o.Order).ToList());
+            research.ForEach(researchi => researchi.TeacherResearch = researchi.TeacherResearch.OrderBy(o => o.Order).ToList());
 
-            var results = Mapper.Map<IEnumerable<ResearchWithTeachersDto>>(research);
+            var results = mapper.Map<IEnumerable<ResearchResource>>(research);
             return View(results);
         }
 
@@ -174,12 +131,12 @@ namespace refca.Features.Research
                 return View();
             }
             research.TeacherIds.Add(userId);
-                        
+
             // validate true teachers
             var existingTeachers = _context.Teachers.Select(i => i.Id).ToList();
             var authorIds = research.TeacherIds.All(t => existingTeachers.Contains(t));
             if (authorIds == false)
-                return NotFound();
+                return View("NotFound");
 
             // getting clean authorList
             var authorList = GetAuthorList(research.TeacherIds);
@@ -251,7 +208,7 @@ namespace refca.Features.Research
 
             var researchInDb = await _context.Research.SingleOrDefaultAsync(t => t.Id == id);
             if (researchInDb == null)
-                return NotFound();
+                return View("NotFound");
 
             ViewBag.KnowledgeAreaId = new SelectList(_context.KnowledgeAreas, "Id", "Name", researchInDb.KnowledgeAreaId);
             ViewBag.AcademicBodyId = new SelectList(_context.AcademicBodies, "Id", "Name", researchInDb.AcademicBodyId);
@@ -289,10 +246,10 @@ namespace refca.Features.Research
 
             var researchInDb = _context.Research.Include(tr => tr.TeacherResearch).SingleOrDefault(t => t.Id == id);
             if (researchInDb == null)
-                return NotFound();
+                return View("NotFound");
 
-             // Validate null teachersIds
-            if(!research.TeacherIds.Any())
+            // Validate null teachersIds
+            if (!research.TeacherIds.Any())
             {
                 _context.Research.Remove(researchInDb);
                 await _context.SaveChangesAsync();
@@ -303,8 +260,8 @@ namespace refca.Features.Research
             var existingTeachers = _context.Teachers.Select(i => i.Id).ToList();
             var authorIds = research.TeacherIds.All(t => existingTeachers.Contains(t));
             if (authorIds == false)
-                return NotFound();
-            
+                return View("NotFound");
+
             // getting clean authorList
             var authorList = GetAuthorList(research.TeacherIds);
 
@@ -379,8 +336,8 @@ namespace refca.Features.Research
                 researchInDb.ResearchPath = currentPath;
                 await _context.SaveChangesAsync();
 
-               researchInDb.TeacherResearch.Where(t => t.ResearchId == researchInDb.Id)
-                .ToList().ForEach(teacher => researchInDb.TeacherResearch.Remove(teacher));
+                researchInDb.TeacherResearch.Where(t => t.ResearchId == researchInDb.Id)
+                 .ToList().ForEach(teacher => researchInDb.TeacherResearch.Remove(teacher));
                 await _context.SaveChangesAsync();
                 foreach (var teacher in authorList)
                 {
@@ -411,7 +368,7 @@ namespace refca.Features.Research
 
             var researchInDb = _context.Research.SingleOrDefault(t => t.Id == id);
             if (researchInDb == null)
-                return NotFound();
+                return View("NotFound");
 
             var oldPath = $@"{_environment.WebRootPath}{researchInDb.ResearchPath}";
 
@@ -438,7 +395,7 @@ namespace refca.Features.Research
         private IActionResult RedirectToView()
         {
             if (User.IsInRole(Roles.Admin))
-                return RedirectToAction(nameof(ResearchController.ListAll));
+                return RedirectToAction(nameof(ResearchController.Manage));
 
             return RedirectToAction(nameof(ResearchController.List));
         }

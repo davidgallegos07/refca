@@ -1,0 +1,55 @@
+﻿<div class="panel panel-default container">
+    <div class="panel-body">
+        <div class="row">
+            <div class="panel-title">
+                <div class="col-md-12">
+                    <h3>{{bdetails?.title}}</h3>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>ISBN</strong></div>
+                <div class="col-md-6">{{bdetails?.isbn}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Edición</strong></div>
+                <div class="col-md-6">{{bdetails?.edition}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Fecha de edición</strong></div>
+                <div class="col-md-6">{{bdetails?.editionDate | date}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Editorial</strong></div>
+                <div class="col-md-6">{{bdetails?.editorial}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Año</strong></div>
+                <div class="col-md-6">{{bdetails?.year}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Paginas</strong></div>
+                <div class="col-md-6">{{bdetails?.printLength}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Género</strong></div>
+                <div class="col-md-6">{{bdetails?.genre}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Autor(es)</strong></div>
+                <div class="col-md-6">
+                    <div *ngFor="let teacher of bdetails?.teacherBooks">
+                        {{teacher.name}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

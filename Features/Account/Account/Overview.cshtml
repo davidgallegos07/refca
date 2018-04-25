@@ -15,7 +15,7 @@
     {
         @await Html.PartialAsync("_TeacherBar")
     }
-    <!-- Navigation -->
+    
     <div id="page-wrapper">
         <div class="row">
             <div class="col-lg-12">
@@ -24,18 +24,16 @@
                     <div class="status-message">@TempData["StatusMessage"]</div>
                 }
             </div>
-            <!-- /.col-lg-12 -->
+            
         </div>
         <div class="jumbotron overview">
             <div class="container">
                 <div class="col-md-offset-1 col-md-10">
-                    <h2 class="text-center page-header">PANEL DE ADMINISTRACIÓN</h2>
+                    <h5 class="text-center page-header">PANEL DE ADMINISTRACIÓN</h5>
                     <p class="text-center">
                         Bienvenido, <span class="text-primary">@UserManager.GetUserName(User)</span>
                     </p>
                 </div>
-                
-               
             </div>
         </div>
     </div>

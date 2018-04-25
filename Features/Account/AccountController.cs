@@ -31,7 +31,7 @@ namespace refca.Features.Account
         private readonly ISmsSender _smsSender;
         private readonly ILogger _logger;
         private readonly string _externalCookieScheme;
-        private readonly ApplicationDbContext _context;
+        private readonly RefcaDbContext _context;
 
         public AccountController(
             UserManager<ApplicationUser> userManager,
@@ -40,7 +40,7 @@ namespace refca.Features.Account
             IEmailSender emailSender,
             ISmsSender smsSender,
             ILoggerFactory loggerFactory,
-            ApplicationDbContext context)
+            RefcaDbContext context)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -198,10 +198,10 @@ namespace refca.Features.Account
             {
                 return View(model);
             }
-            var user = await GetCurrentUserAsync();
+            var user = await _userManager.FindByEmailAsync(model.Email);
             if (user == null)
                 return View("Error");
-
+            
                 model.Code = await _userManager.GeneratePasswordResetTokenAsync(user);
                 var result = await _userManager.ResetPasswordAsync(user, model.Code, model.Password);
                 if (result.Succeeded)

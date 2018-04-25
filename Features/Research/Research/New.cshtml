@@ -6,13 +6,13 @@
 
 <div id="wrapper">
     @await Html.PartialAsync("_TeacherBar")
-    <!-- Navigation -->
+    
     <div id="page-wrapper">
         <div class="row">
             <div class="col-lg-12">
-                <h2 class="page-header">@ViewData["Title"]</h2>
+                <h3 class="page-header">@ViewData["Title"]</h2>
             </div>
-            <!-- /.col-lg-12 -->
+            
         </div>
         <form asp-controller="Research" asp-action="New" enctype="multipart/form-data" method="post">
             <div class="form-horizontal">
@@ -28,7 +28,7 @@
                     <label asp-for="Code" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <input asp-for="Code" class="form-control" />
-                        <span asp-validation-for="Code" class="text-danger" data-msg-number="Ingresa un numero entero valido" data-rule-number="true" vocab="123" />
+                        <span asp-validation-for="Code" class="text-danger" data-msg-number="Ingresa un número entero valido" data-rule-number="true" vocab="123" />
                     </div>
                 </div>
                 <div class="form-group">
@@ -85,15 +85,6 @@
                     <div class="col-md-10">
                         <select asp-for="ResearchLineId" asp-items="@ViewBag.ResearchLineId" class="form-control"></select>
                         <span asp-validation-for="ResearchLineId" class="text-danger" />
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label asp-for="ResearchFile" class="col-md-2 control-label"></label>
-                    <div class="col-md-10">
-                        <input class="btn btn-default" type="file" data-val="true" data-val-required="El archivo es requerido"
-                               data-msg-extension="Solo se permiten archivos con extension .pdf" data-rule-extension="pdf"
-                               id="ResearchFile" name="ResearchFile" value="">
-                        <span asp-validation-for="ResearchFile" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">

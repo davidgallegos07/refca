@@ -1,10 +1,6 @@
-<div class='container-fluid'>
-    <div class='row'>
-        <div class='col-sm-3'>
-            <nav-menu></nav-menu>
-        </div>
-        <div class='col-sm-9 body-content'>
-            <router-outlet></router-outlet>
-        </div>
-    </div>
-</div>
+﻿<nav-menu></nav-menu>
+    <ng2-toasty [position]="'bottom-right'"></ng2-toasty>
+
+    <router-outlet></router-outlet>
+
+<app-footer></app-footer>

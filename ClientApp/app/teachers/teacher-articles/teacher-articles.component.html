@@ -1,0 +1,50 @@
+<div class="tab-pane" id="articles">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+            <input type="text" class="form-control" [(ngModel)]="query.searchTerm" (keyup.enter)="onFilterChange()" placeholder="Buscar Artículo  Por Título, ISSN o Revista">
+            </div>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Revista</th>
+                    <th>ISSN</th>
+                    <th>Fecha</th>
+                    <th>Archivo</th>
+                    <th>Autor(es)</th>
+                </tr>
+            </thead>
+            <tbody id="items">
+                <tr *ngFor="let a of articles.items">
+                    <td>{{a?.title}}</td>
+                    <td>{{a?.magazine}}</td>
+                    <td>{{a?.issn}}</td>
+                    <td>{{a?.editionDate | date}}</td>
+                    <td>
+                        <a target="_blank" href="{{a?.articlePath}}"><i class="fa fa-download"></i> 
+                            <span>Descargar</span> 
+                        </a>
+                    </td>
+                    <td>
+                        <p *ngFor="let teacher of a.teacherArticles">{{teacher.name}}</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <ul *ngIf="pager.pages  && pager.pages.length" class="pagination">
+            <li [ngClass]="{disabled:pager.currentPage === 1}">
+                <a (click)="onFilterChange(pager.currentPage - 1)">&laquo;</a>
+            </li>
+            <li *ngFor="let page of pager.pages" [ngClass]="{active:pager.currentPage === page}">
+                <a (click)="onFilterChange(page)">{{page}}</a>
+            </li>
+            <li [ngClass]="{disabled:pager.currentPage === pager.totalPages}">
+                <a (click)="onFilterChange(pager.currentPage + 1)">&raquo;</a>
+            </li>
+        </ul>
+    </div>
+</div>

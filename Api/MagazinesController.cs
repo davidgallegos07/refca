@@ -6,33 +6,38 @@ using Microsoft.AspNetCore.Mvc;
 using refca.Data;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
-using refca.Dtos;
+using refca.Resources;
+using refca.Repositories;
+using refca.Resources.QueryResources;
+using refca.Models.QueryFilters;
+using refca.Models;
+using Microsoft.AspNetCore.Authorization;
+using refca.Models.Identity;
+using refca.Resources.TeacherQueryResources;
 
 namespace refca.Api
 {
     [Route("api/[controller]")]
     public class MagazinesController : Controller
     {
-        private ApplicationDbContext _context;
-
-        public MagazinesController(ApplicationDbContext context)
+        private RefcaDbContext _context;
+        private readonly IMapper mapper;
+        private readonly IMagazineRepository _magazineRepository;
+        public MagazinesController(RefcaDbContext context, IMapper mapper, IMagazineRepository magazineRepository)
         {
+            this.mapper = mapper;
             _context = context;
+            _magazineRepository = magazineRepository;
         }
 
-        // GET: api/magazines
+        // GET: api/magazines?{query}
         [HttpGet]
-        public IEnumerable<MagazineWithTeachersDto> Get()
+        public async Task<QueryResultResource<MagazineResource>> GetMagazines(TeacherMagazineQueryResource filterResource)
         {
-            var magazines =  _context.Magazines
-               .Include(tp => tp.TeacherMagazines)
-                   .ThenInclude(t => t.Teacher)
-               .Where(p => p.IsApproved == true)
-               .OrderBy(d => d.AddedDate)
-               .ToList();
-                magazines.ForEach(magazine => magazine.TeacherMagazines = magazine.TeacherMagazines.OrderBy(o => o.Order).ToList());
+            var filter = mapper.Map<TeacherMagazineQueryResource, MagazineQuery>(filterResource);
+            var queryResult = await _magazineRepository.GetMagazines(filter);
 
-            return Mapper.Map<IEnumerable<MagazineWithTeachersDto>>(magazines);
+            return mapper.Map<QueryResult<Magazine>, QueryResultResource<MagazineResource>>(queryResult);
         }
 
         // GET: api/magazines/count
@@ -52,12 +57,13 @@ namespace refca.Api
                     .ThenInclude(t => t.Teacher)
                  .Where(p => p.IsApproved == true)
                  .SingleOrDefaultAsync(t => t.Id == id);
-                 magazine.TeacherMagazines = magazine.TeacherMagazines.OrderBy(o => o.Order).ToList();
 
             if (magazine == null)
                 return NotFound();
 
-            return Ok(Mapper.Map<MagazineWithTeachersDto>(magazine));
+            magazine.TeacherMagazines = magazine.TeacherMagazines.OrderBy(o => o.Order).ToList();
+
+            return Ok(mapper.Map<MagazineResource>(magazine));
         }
     }
 }

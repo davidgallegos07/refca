@@ -1,0 +1,43 @@
+﻿<ng2-toasty [position]="'bottom-right'"></ng2-toasty>
+<div *ngIf="article" class="panel panel-default container">
+    <div class="panel-body">
+        <div class="row">
+            <div class="panel-title">
+                <div class="col-md-12">
+                    <h3>{{article?.title}}</h3>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="col-md-6"><strong>Revista</strong></div>
+                <div class="col-md-6">{{article?.magazine}}</div>
+            </div>
+                           
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>ISSN</strong></div>
+                <div class="col-md-6">{{article?.issn}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Fecha de edición</strong></div>
+                <div class="col-md-6">{{article?.editionDate | date}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Archivo</strong></div>
+                <div class="col-md-6">
+                    <a target="_blank" href="{{article?.articlePath}}"><i class="fa fa-download"></i> Descargar</a>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Autor(es)</strong></div>
+                <div class="col-md-6">
+                    <div *ngFor="let teacher of article?.teacherArticles">
+                        {{teacher.name}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using refca.Data;
-using refca.Models;
 using refca.Models.TeacherViewModels;
 using refca.Features.Home;
 using refca.Models.Identity;
@@ -17,29 +16,31 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Net.Http.Headers;
 using AutoMapper;
 using System.Collections.Generic;
-using refca.Dtos;
+using refca.Resources;
+using refca.Repositories;
 using refca.Models.AccountViewModels;
 using System;
+using refca.Models;
 
 namespace refca.Features.Teacher
 {
     public class TeacherController : Controller
     {
-        private ApplicationDbContext _context;
+        private RefcaDbContext _context;
         private object _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private IAuthorizationService _authorizationService;
         private RoleManager<IdentityRole> _roleManager;
         private IHostingEnvironment _environment;
-        private ITeacherRepository _teacherRepository;
+        private IFileRepository _teacherRepository;
 
-        public TeacherController(ApplicationDbContext context,
+        public TeacherController(RefcaDbContext context,
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             RoleManager<IdentityRole> roleManager,
             IAuthorizationService authorizationService,
             IHostingEnvironment environment,
-            ITeacherRepository teacherRepository)
+            IFileRepository teacherRepository)
         {
             _context = context;
             _userManager = userManager;
@@ -99,7 +100,7 @@ namespace refca.Features.Teacher
             var knowledgeArea = _context.KnowledgeAreas.SingleOrDefault(k => k.Id == model.KnowledgeAreaId);
             var selectedLevel = _context.Levels.SingleOrDefault(l => l.Id == model.LevelId);
 
-            if (AcademicBody == null || knowledgeArea == null || selectedLevel == null)
+            if (AcademicBody == null || knowledgeArea == null || (selectedLevel == null && model.SNI == true))
                 return BadRequest();
 
             var emailTeacher = _context.Teachers.Where(e => e.Email == model.Email).SingleOrDefault();
@@ -135,6 +136,8 @@ namespace refca.Features.Teacher
                     };
                     if (model.SNI == false)
                         teacher.LevelId = null;
+                    else
+                        teacher.LevelId = model.LevelId;
 
                     _context.Add(teacher);
                     _context.SaveChanges();
@@ -197,14 +200,14 @@ namespace refca.Features.Teacher
             var knowledgeArea = _context.KnowledgeAreas.SingleOrDefault(k => k.Id == model.KnowledgeAreaId);
             var selectedLevel = _context.Levels.SingleOrDefault(l => l.Id == model.LevelId);
 
-            if (AcademicBody == null || knowledgeArea == null || selectedLevel == null)
+            if (AcademicBody == null || knowledgeArea == null || (selectedLevel == null && model.SNI == true))
                 return BadRequest();
 
             if (ModelState.IsValid)
             {
                 if (model.SNI == false)
                     model.LevelId = null;
-
+                
                 teacherInDb.Name = model.Name;
                 teacherInDb.TeacherCode = model.TeacherCode;
                 teacherInDb.HasProdep = model.HasProdep;

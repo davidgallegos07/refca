@@ -15,7 +15,7 @@ using refca.Features.Home;
 using refca.Models.Identity;
 using refca.Models.MagazineViewModels;
 using AutoMapper;
-using refca.Dtos;
+using refca.Resources;
 using System.Collections.Generic;
 
 namespace refca.Features.Magazine
@@ -23,61 +23,25 @@ namespace refca.Features.Magazine
     [Authorize]
     public class MagazineController : Controller
     {
-        private ApplicationDbContext _context;
+        private RefcaDbContext _context;
         private IHostingEnvironment _environment;
         private UserManager<ApplicationUser> _userManager;
+        private readonly IMapper mapper;
 
-        public MagazineController(ApplicationDbContext context, UserManager<ApplicationUser> userManager,
-            IHostingEnvironment environment)
+        public MagazineController(RefcaDbContext context, UserManager<ApplicationUser> userManager,
+            IHostingEnvironment environment, IMapper mapper)
         {
+            this.mapper = mapper;
             _context = context;
             _userManager = userManager;
             _environment = environment;
         }
 
-        // GET: /Magazine/ListAll
+        // GET: /Magazine/Manage
         [Authorize(Roles = Roles.Admin)]
-        public async Task<IActionResult> ListAll(string returnUrl = null)
+        public IActionResult Manage()
         {
-            ViewData["ReturnUrl"] = returnUrl;
-
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
-
-            var magazines = await _context.Magazines
-               .Include(b => b.TeacherMagazines)
-                   .ThenInclude(b => b.Teacher)
-               .Where(p => p.IsApproved == true)
-              .OrderBy(d => d.AddedDate)
-              .ToListAsync();
-                magazines.ForEach(magazine => magazine.TeacherMagazines = magazine.TeacherMagazines.OrderBy(o => o.Order).ToList());
-
-            var results = Mapper.Map<IEnumerable<MagazineWithTeachersDto>>(magazines);
-            return View(results);
-
-        }
-
-        // GET: /Magazine/ListUnapproved
-        [Authorize(Roles = Roles.Admin)]
-        public async Task<IActionResult> ListUnapproved(string returnUrl = null)
-        {
-            ViewData["ReturnUrl"] = returnUrl;
-
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
-
-            var magazines = await _context.Magazines
-               .Include(b => b.TeacherMagazines)
-                   .ThenInclude(b => b.Teacher)
-              .Where(p => p.IsApproved == false)
-              .OrderBy(d => d.AddedDate)
-              .ToListAsync();
-                magazines.ForEach(magazine => magazine.TeacherMagazines = magazine.TeacherMagazines.OrderBy(o => o.Order).ToList());
-              
-            var results = Mapper.Map<IEnumerable<MagazineWithTeachersDto>>(magazines);
-            return View(results);
+            return View();
         }
 
         // GET: /Magazine/IsApproved
@@ -91,7 +55,7 @@ namespace refca.Features.Magazine
 
             var magazineInDb = await _context.Magazines.SingleOrDefaultAsync(t => t.Id == id);
             if (magazineInDb == null)
-                return NotFound();
+                return View("NotFound");
 
             if (ModelState.IsValid)
             {
@@ -107,7 +71,7 @@ namespace refca.Features.Magazine
                 await _context.SaveChangesAsync();
             }
 
-            return RedirectToAction(nameof(MagazineController.ListUnapproved));
+            return RedirectToAction(nameof(MagazineController.Manage));
         }
 
         // GET: /Magazine/List 
@@ -124,9 +88,9 @@ namespace refca.Features.Magazine
                    .ThenInclude(t => t.Teacher)
               .OrderBy(d => d.AddedDate)
               .ToListAsync();
-                magazines.ForEach(magazine => magazine.TeacherMagazines = magazine.TeacherMagazines.OrderBy(o => o.Order).ToList());
+            magazines.ForEach(magazine => magazine.TeacherMagazines = magazine.TeacherMagazines.OrderBy(o => o.Order).ToList());
 
-            var results = Mapper.Map<IEnumerable<MagazineWithTeachersDto>>(magazines);
+            var results = mapper.Map<IEnumerable<MagazineResource>>(magazines);
             return View(results);
         }
 
@@ -164,7 +128,7 @@ namespace refca.Features.Magazine
             var existingTeachers = _context.Teachers.Select(i => i.Id).ToList();
             var authorIds = magazine.TeacherIds.All(t => existingTeachers.Contains(t));
             if (authorIds == false)
-                return NotFound();
+                return View("NotFound");
 
             // getting clean authorList
             var authorList = GetAuthorList(magazine.TeacherIds);
@@ -233,7 +197,7 @@ namespace refca.Features.Magazine
 
             var magazine = await _context.Magazines.SingleOrDefaultAsync(t => t.Id == id);
             if (magazine == null)
-                return NotFound();
+                return View("NotFound");
 
             var viewModel = new MagazineViewModel
             {
@@ -265,10 +229,10 @@ namespace refca.Features.Magazine
 
             var magazineInDb = _context.Magazines.Include(tb => tb.TeacherMagazines).SingleOrDefault(t => t.Id == id);
             if (magazineInDb == null)
-                return NotFound();
+                return View("NotFound");
 
             // Validate null teachersIds
-            if(!magazine.TeacherIds.Any())
+            if (!magazine.TeacherIds.Any())
             {
                 _context.Magazines.Remove(magazineInDb);
                 await _context.SaveChangesAsync();
@@ -279,8 +243,8 @@ namespace refca.Features.Magazine
             var existingTeachers = _context.Teachers.Select(i => i.Id).ToList();
             var authorIds = magazine.TeacherIds.All(t => existingTeachers.Contains(t));
             if (authorIds == false)
-                return NotFound();
-            
+                return View("NotFound");
+
             // getting clean authorList
             var authorList = GetAuthorList(magazine.TeacherIds);
 
@@ -366,7 +330,7 @@ namespace refca.Features.Magazine
                 ListItems(magazine);
                 return View(magazine);
             }
-            
+
             return RedirectToView();
         }
 
@@ -383,7 +347,7 @@ namespace refca.Features.Magazine
 
             var magazineInDb = _context.Magazines.SingleOrDefault(t => t.Id == id);
             if (magazineInDb == null)
-                return NotFound();
+                return View("NotFound");
 
             var oldPath = $@"{_environment.WebRootPath}{magazineInDb.MagazinePath}";
 
@@ -395,7 +359,7 @@ namespace refca.Features.Magazine
             _context.SaveChanges();
 
             return RedirectToView();
-            
+
         }
 
         #region helpers
@@ -407,7 +371,7 @@ namespace refca.Features.Magazine
         private IActionResult RedirectToView()
         {
             if (User.IsInRole(Roles.Admin))
-                return RedirectToAction(nameof(MagazineController.ListAll));
+                return RedirectToAction(nameof(MagazineController.Manage));
 
             return RedirectToAction(nameof(MagazineController.List));
         }

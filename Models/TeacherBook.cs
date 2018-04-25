@@ -10,6 +10,7 @@ namespace refca.Models
         public string TeacherId { get; set; }
         public int BookId { get; set; }
         public int Order { get; set; }
+        public string Role { get; set; }
         public Teacher Teacher { get; set; }
         public Book Book { get; set; }
     }

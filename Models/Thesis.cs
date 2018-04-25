@@ -20,6 +20,7 @@ namespace refca.Models
         public EducationProgram EducationProgram { get; set; }  
         public int ResearchLineId { get; set; }
         public ResearchLine ResearchLine { get; set; }
+        public string Owner { get; set; }
 
         public ICollection<TeacherThesis> TeacherTheses { get; set; }
     }

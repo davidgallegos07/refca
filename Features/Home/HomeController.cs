@@ -12,7 +12,7 @@ namespace refca.Features.Home
         {
             return View();
         }
-
+        [Route("/Error")]
         public IActionResult Error()
         {
             return View();

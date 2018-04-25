@@ -17,73 +17,32 @@ using refca.Features.Home;
 using refca.Models.Identity;
 using AutoMapper;
 using System.Collections.Generic;
-using refca.Dtos;
+using refca.Resources;
 
 namespace refca.Features.Thesis
 {
     [Authorize]
     public class ThesisController : Controller
     {
-        private ApplicationDbContext _context;
+        private RefcaDbContext _context;
         private IHostingEnvironment _environment;
         private UserManager<ApplicationUser> _userManager;
+        private readonly IMapper mapper;
 
-        public ThesisController(ApplicationDbContext context, UserManager<ApplicationUser> userManager,
-            IHostingEnvironment environment)
+        public ThesisController(RefcaDbContext context, UserManager<ApplicationUser> userManager,
+            IHostingEnvironment environment, IMapper mapper)
         {
+            this.mapper = mapper;
             _context = context;
             _userManager = userManager;
             _environment = environment;
         }
 
-        // GET: /Thesis/ListAll
+        // GET: /Thesis/Manage
         [Authorize(Roles = Roles.Admin)]
-        public async Task<IActionResult> ListAll(string returnUrl = null)
+        public IActionResult Manage(string returnUrl = null)
         {
-            ViewData["ReturnUrl"] = returnUrl;
-
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
-
-            var theses = await _context.Thesis
-                 .Include(g => g.TeacherTheses)
-                   .ThenInclude(a => a.Teacher)
-               .Include(e => e.EducationProgram)
-               .Include(r => r.ResearchLine)
-               .Where(p => p.IsApproved == true)
-               .OrderBy(d => d.AddedDate)
-               .ToListAsync();
-                theses.ForEach(thesis => thesis.TeacherTheses = thesis.TeacherTheses.OrderBy(o => o.Order).ToList());
-
-            var results = Mapper.Map<IEnumerable<ThesisWithTeachersDto>>(theses);
-            return View(results);
-
-        }
-
-        // GET: /Thesis/ListUnapproved
-        [Authorize(Roles = Roles.Admin)]
-        public async Task<IActionResult> ListUnapproved(string returnUrl = null)
-        {
-            ViewData["ReturnUrl"] = returnUrl;
-
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
-
-            var theses = await _context.Thesis
-               .Include(g => g.TeacherTheses)
-                   .ThenInclude(a => a.Teacher)
-               .Include(e => e.EducationProgram)
-               .Include(r => r.ResearchLine)
-               .Where(p => p.IsApproved == false)
-               .OrderBy(d => d.AddedDate)
-               .ToListAsync();
-                theses.ForEach(thesis => thesis.TeacherTheses = thesis.TeacherTheses.OrderBy(o => o.Order).ToList());
-
-            var results = Mapper.Map<IEnumerable<ThesisWithTeachersDto>>(theses);
-            return View(results);
-
+            return View();
         }
 
         // GET: /Thesis/IsApproved
@@ -97,7 +56,7 @@ namespace refca.Features.Thesis
 
             var thesisInDb = await _context.Thesis.SingleOrDefaultAsync(t => t.Id == id);
             if (thesisInDb == null)
-                return NotFound();
+                return View("NotFound");
 
             if (ModelState.IsValid)
             {
@@ -113,7 +72,7 @@ namespace refca.Features.Thesis
                 await _context.SaveChangesAsync();
             }
 
-            return RedirectToAction(nameof(ThesisController.ListUnapproved));
+            return RedirectToAction(nameof(ThesisController.Manage));
         }
 
         // GET: /Thesis/List 
@@ -134,9 +93,9 @@ namespace refca.Features.Thesis
                 .Include(r => r.ResearchLine)
                 .OrderBy(d => d.AddedDate)
                 .ToListAsync();
-                theses.ForEach(thesis => thesis.TeacherTheses = thesis.TeacherTheses.OrderBy(o => o.Order).ToList());
+            theses.ForEach(thesis => thesis.TeacherTheses = thesis.TeacherTheses.OrderBy(o => o.Order).ToList());
 
-            var results = Mapper.Map<IEnumerable<ThesisWithTeachersDto>>(theses);
+            var results = mapper.Map<IEnumerable<ThesisResource>>(theses);
             return View(results);
         }
 
@@ -168,7 +127,7 @@ namespace refca.Features.Thesis
 
             if (researchLine == null || educationProgram == null)
                 return BadRequest();
-            
+
             // validating file
             if (!IsValidFile(ThesisFile))
             {
@@ -182,13 +141,13 @@ namespace refca.Features.Thesis
             var existingTeachers = _context.Teachers.Select(i => i.Id).ToList();
             var authorIds = thesis.TeacherIds.All(t => existingTeachers.Contains(t));
             if (authorIds == false)
-                return NotFound();
+                return View("NotFound");
 
             // getting clean authorList
             var authorList = GetAuthorList(thesis.TeacherIds);
             if (ThesisFile != null)
             {
-               var fileName = Guid.NewGuid().ToString() + Path.GetExtension(ThesisFile.FileName);
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(ThesisFile.FileName);
                 var bucket = $@"/bucket/{userId}/thesis/";
                 var userPath = $@"{_environment.WebRootPath}{bucket}";
                 if (!Directory.Exists(userPath))
@@ -250,7 +209,7 @@ namespace refca.Features.Thesis
 
             var thesis = await _context.Thesis.SingleOrDefaultAsync(t => t.Id == id);
             if (thesis == null)
-                return NotFound();
+                return View("NotFound");
 
             ViewBag.ResearchLineId = new SelectList(_context.ResearchLines, "Id", "Name", thesis.ResearchLineId);
             ViewBag.EducationProgramId = new SelectList(_context.EducationPrograms, "Id", "Name", thesis.EducationProgramId);
@@ -292,11 +251,11 @@ namespace refca.Features.Thesis
             var thesisInDb = _context.Thesis.Include(e => e.EducationProgram).Include(r => r.ResearchLine).Include(d => d.TeacherTheses)
                             .SingleOrDefault(t => t.Id == id);
             if (thesisInDb == null)
-                return NotFound();
+                return View("NotFound");
 
 
             // Validate null teachersIds
-            if(!thesis.TeacherIds.Any())
+            if (!thesis.TeacherIds.Any())
             {
                 _context.Thesis.Remove(thesisInDb);
                 await _context.SaveChangesAsync();
@@ -307,8 +266,8 @@ namespace refca.Features.Thesis
             var existingTeachers = _context.Teachers.Select(i => i.Id).ToList();
             var authorIds = thesis.TeacherIds.All(t => existingTeachers.Contains(t));
             if (authorIds == false)
-                return NotFound();
-            
+                return View("NotFound");
+
             // getting clean authorList
             var authorList = GetAuthorList(thesis.TeacherIds);
 
@@ -375,7 +334,7 @@ namespace refca.Features.Thesis
                 thesisInDb.EducationProgramId = thesis.EducationProgramId;
                 thesisInDb.ResearchLineId = thesis.ResearchLineId;
                 thesisInDb.ThesisPath = currentPath;
-                
+
                 thesisInDb.TeacherTheses.Where(t => t.ThesisId == thesisInDb.Id)
                 .ToList().ForEach(teacher => thesisInDb.TeacherTheses.Remove(teacher));
                 await _context.SaveChangesAsync();
@@ -408,7 +367,7 @@ namespace refca.Features.Thesis
 
             var thesisInDb = _context.Thesis.SingleOrDefault(t => t.Id == id);
             if (thesisInDb == null)
-                return NotFound();
+                return View("NotFound");
 
             var oldPath = $@"{_environment.WebRootPath}{thesisInDb.ThesisPath}";
 
@@ -436,7 +395,7 @@ namespace refca.Features.Thesis
         private IActionResult RedirectToView()
         {
             if (User.IsInRole(Roles.Admin))
-                return RedirectToAction(nameof(ThesisController.ListAll));
+                return RedirectToAction(nameof(ThesisController.Manage));
 
             return RedirectToAction(nameof(ThesisController.List));
         }

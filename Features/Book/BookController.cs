@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Net.Http.Headers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using refca.Data;
@@ -15,69 +14,39 @@ using refca.Features.Home;
 using refca.Models.Identity;
 using refca.Models.BookViewModels;
 using AutoMapper;
-using refca.Dtos;
 using System.Collections.Generic;
+using refca.Repositories;
+using refca.Core;
+using refca.Models.FileViewModel;
 
 namespace refca.Features.Book
 {
     [Authorize]
     public class BookController : Controller
     {
-        private ApplicationDbContext _context;
-        private IHostingEnvironment _environment;
-        private UserManager<ApplicationUser> _userManager;
+        private RefcaDbContext context;
+        private IHostingEnvironment environment;
+        private UserManager<ApplicationUser> userManager;
+        private readonly IMapper mapper;
+        private IBookRepository bookRepository;
+        private readonly IFileProductivityService fileProductivitySvc;
 
-        public BookController(ApplicationDbContext context, UserManager<ApplicationUser> userManager,
-            IHostingEnvironment environment)
+        public BookController(RefcaDbContext context, UserManager<ApplicationUser> userManager,
+        IHostingEnvironment environment, IMapper mapper, IBookRepository bookRepository, IFileProductivityService fileProductivitySvc)
         {
-            _context = context;
-            _userManager = userManager;
-            _environment = environment;
+            this.mapper = mapper;
+            this.context = context;
+            this.userManager = userManager;
+            this.environment = environment;
+            this.bookRepository = bookRepository;
+            this.fileProductivitySvc = fileProductivitySvc;
         }
 
-        // GET: /Book/ListAll
+        // GET: /Book/Manage
         [Authorize(Roles = Roles.Admin)]
-        public async Task<IActionResult> ListAll(string returnUrl = null)
+        public IActionResult Manage()
         {
-            ViewData["ReturnUrl"] = returnUrl;
-
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
-
-            var books = await _context.Books
-                .Include(b => b.TeacherBooks)
-                    .ThenInclude(b => b.Teacher)
-                .Where(p => p.IsApproved == true)
-                .OrderBy(d => d.AddedDate)
-                .ToListAsync();
-            books.ForEach(book => book.TeacherBooks = book.TeacherBooks.OrderBy(o => o.Order).ToList());
-
-            var results = Mapper.Map<IEnumerable<BookWithTeachersDto>>(books);
-            return View(results);
-
-        }
-
-        // GET: /Book/ListUnapproved
-        [Authorize(Roles = Roles.Admin)]
-        public async Task<IActionResult> ListUnapproved(string returnUrl = null)
-        {
-            ViewData["ReturnUrl"] = returnUrl;
-
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
-
-            var books = await _context.Books
-               .Include(b => b.TeacherBooks)
-                   .ThenInclude(b => b.Teacher)
-              .Where(p => p.IsApproved == false)
-              .OrderBy(d => d.AddedDate)
-              .ToListAsync();
-            books.ForEach(book => book.TeacherBooks = book.TeacherBooks.OrderBy(o => o.Order).ToList());
-
-            var results = Mapper.Map<IEnumerable<BookWithTeachersDto>>(books);
-            return View(results);
+            return View();
         }
 
         // GET: /Book/IsApproved
@@ -85,51 +54,58 @@ namespace refca.Features.Book
         public async Task<IActionResult> IsApproved(int id, string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
 
-            var bookInDb = await _context.Books.SingleOrDefaultAsync(t => t.Id == id);
-            if (bookInDb == null)
-                return NotFound();
+            var bookInDb = await context.Books.SingleOrDefaultAsync(t => t.Id == id);
+            if (bookInDb == null) return View("NotFound");
 
-            if (ModelState.IsValid)
-            {
-                if (bookInDb.IsApproved == true)
-                {
-                    bookInDb.IsApproved = false;
-                }
-                else
-                {
-                    bookInDb.IsApproved = true;
-                }
+            bookInDb.IsApproved = bookInDb.IsApproved == true ? bookInDb.IsApproved = false : bookInDb.IsApproved = true;
+            await context.SaveChangesAsync();
 
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToAction(nameof(BookController.ListUnapproved));
+            return RedirectToAction(nameof(BookController.Manage));
         }
 
         // GET: /Book/List 
         [HttpGet]
         [Authorize(Roles = Roles.Teacher)]
-        public async Task<IActionResult> List(string returnUrl = null)
+        public IActionResult List()
         {
-            ViewData["ReturnUrl"] = returnUrl;
-            var userId = _userManager.GetUserId(User);
-
-            var books = await _context.Books
-               .Where(tb => tb.TeacherBooks.Any(t => t.TeacherId == userId))
-               .Include(tb => tb.TeacherBooks)
-                   .ThenInclude(t => t.Teacher)
-              .OrderBy(d => d.AddedDate)
-              .ToListAsync();
-            books.ForEach(book => book.TeacherBooks = book.TeacherBooks.OrderBy(o => o.Order).ToList());
-
-            var results = Mapper.Map<IEnumerable<BookWithTeachersDto>>(books);
-            return View(results);
+            return View();
         }
 
+        // GET: /Book/Upload
+        [HttpGet]
+        public async Task<IActionResult> Upload(int id)
+        {
+            var bookInDb = await bookRepository.GetBook(id);
+            if (bookInDb == null) return RedirectToPanel();
+
+            return View(new FileViewModel { Id = id, ControllerName = "Book" });
+        }
+        
+        // POST: /Book/Upload
+        [HttpPost]
+        [Authorize(Roles = Roles.Teacher)]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Upload(IFormFile file, FileViewModel book)
+        {
+            var userId = userManager.GetUserId(User);
+
+            var bookInDb = await bookRepository.GetBook(book.Id);
+            if (bookInDb == null) return RedirectToPanel();
+            if (!ModelState.IsValid) return View(book);
+
+            var bucket = $@"/bucket/{userId}/book/";
+            var uploadFilePath = $@"{environment.WebRootPath}{bucket}";
+            var fileName = await fileProductivitySvc.Storage(uploadFilePath, file);
+
+            fileProductivitySvc.Remove(bookInDb.BookPath);
+
+            bookInDb.BookPath = Path.Combine(bucket, fileName);
+            await context.SaveChangesAsync();
+
+            return RedirectToPanel();
+        }
+        
         // GET: /Book/New
         [Authorize(Roles = Roles.Teacher)]
         public IActionResult New(string returnUrl = null)
@@ -143,116 +119,49 @@ namespace refca.Features.Book
         [HttpPost]
         [Authorize(Roles = Roles.Teacher)]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> New(IFormFile BookFile, BookViewModel book, string returnUrl = null)
+        public async Task<IActionResult> New(BookViewModel book, string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
 
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
 
-            // validating file
-            if (!IsValidFile(BookFile))
+            if (!ModelState.IsValid) return View(book);
+            if (!validTeachers(book.TeacherIds)) return View("NotFound");
+
+            var newBook = mapper.Map<Models.Book>(book);
+            bookRepository.Add(newBook);
+
+            var selfAuthor = book.TeacherIds.FirstOrDefault(a => a == userId);
+            if (selfAuthor != null) 
+                book.TeacherIds.Remove(userId);
+            
+            var numOrder = 0;            
+            context.TeacherBooks.Add(new TeacherBook { TeacherId = userId, BookId = newBook.Id, Order = ++numOrder, Role = Roles.Writter});
+            foreach (var teacher in book.TeacherIds)
             {
-                ListItems(book);
-                return View();
+                context.TeacherBooks.Add(new TeacherBook { TeacherId = teacher, BookId = newBook.Id, Order = ++numOrder, Role = Roles.Reader});
             }
-            book.TeacherIds.Add(userId);
-                        
-            // validate true teachers
-            var existingTeachers = _context.Teachers.Select(i => i.Id).ToList();
-            var authorIds = book.TeacherIds.All(t => existingTeachers.Contains(t));
-            if (authorIds == false)
-                return NotFound();
+            await context.SaveChangesAsync();
 
-            // getting clean authorList
-            var authorList = GetAuthorList(book.TeacherIds);
-
-            if (BookFile != null)
-            {
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(BookFile.FileName);
-                var bucket = $@"/bucket/{userId}/book/";
-                var userPath = $@"{_environment.WebRootPath}{bucket}";
-                if (!Directory.Exists(userPath))
-                    Directory.CreateDirectory(userPath);
-
-                var physicalPath = Path.Combine(userPath, fileName);
-
-                using (var stream = new FileStream(physicalPath, FileMode.Create))
-                {
-                    await BookFile.CopyToAsync(stream);
-                }
-
-                if (ModelState.IsValid)
-                {
-                    var newBook = new Models.Book
-                    {
-                        Title = book.Title,
-                        Abstract = book.Abstract,
-                        AddedDate = DateTime.Now,
-                        EditionDate = book.EditionDate,
-                        Year = book.Year,
-                        ISBN = book.ISBN,
-                        Edition = book.Edition,
-                        Editorial = book.Editorial,
-                        PrintLength = book.PrintLength,
-                        Genre = book.Genre
-
-                    };
-                    newBook.BookPath = Path.Combine(bucket, fileName);
-                    _context.Books.Add(newBook);
-                    await _context.SaveChangesAsync();
-                    
-                    foreach (var author in authorList)
-                    {
-                        var teacherBook = new TeacherBook { TeacherId = author.Id, BookId = newBook.Id, Order = author.Order };
-                        _context.TeacherBooks.Add(teacherBook);
-                    }
-                    await _context.SaveChangesAsync();
-
-                }
-                else
-                {
-                    ListItems(book);
-                    return View(book);
-                }
-            }
-            else
-            {
-                ModelState.AddModelError(string.Empty, "El archivo es requerido");
-                ListItems(book);
-                return View(book);
-            }
-            return RedirectToAction(nameof(BookController.List));
+            return RedirectToAction(nameof(BookController.Upload), new { Id = newBook.Id });
         }
 
         // GET: /Book/Edit
+        [HttpGet]
         [Authorize(Roles = Roles.AdminAndTeacher)]
         public async Task<IActionResult> Edit(int id)
         {
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
 
-            var book = await _context.Books.SingleOrDefaultAsync(t => t.Id == id);
-            if (book == null)
-                return NotFound();
+            var bookInDb = await context.Books.FirstOrDefaultAsync(t => t.Id == id);
+            if (bookInDb == null) return View("NotFound");
 
-            var viewModel = new BookViewModel
-            {
-                Id = book.Id,
-                Title = book.Title,
-                Abstract = book.Abstract,
-                EditionDate = book.EditionDate,
-                Year = book.Year,
-                ISBN = book.ISBN,
-                Edition = book.Edition,
-                Editorial = book.Editorial,
-                PrintLength = book.PrintLength,
-                Genre = book.Genre
+            var isTeacherBook = context.TeacherBooks.FirstOrDefault(a => a.BookId == bookInDb.Id && a.TeacherId == userId);
+            if (User.IsInRole(Roles.Teacher) && isTeacherBook == null) return View("AccessDenied");
 
-            };
-            viewModel.Teachers = _context.TeacherBooks.Where(p => p.BookId == book.Id)
+            var viewModel = mapper.Map<BookViewModel>(bookInDb);
+
+            viewModel.Teachers = context.TeacherBooks.Where(a => a.BookId == bookInDb.Id)
             .OrderBy(o => o.Order).Select(t => t.Teacher).ToList();
 
             return View(viewModel);
@@ -262,219 +171,100 @@ namespace refca.Features.Book
         [HttpPost]
         [Authorize(Roles = Roles.AdminAndTeacher)]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, IFormFile BookFile, BookViewModel book, string returnUrl = null)
+        public async Task<IActionResult> Edit(int id, BookViewModel book, string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
 
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
 
-            var bookInDb = _context.Books.Include(tb => tb.TeacherBooks).SingleOrDefault(t => t.Id == id);
-            if (bookInDb == null)
-                return NotFound();
+            var bookInDb = await bookRepository.GetBook(id);
+            if (bookInDb == null) return View("NotFound");
+
+            var isTeacherBook = context.TeacherBooks
+                .FirstOrDefault(a => a.BookId == bookInDb.Id && a.TeacherId == userId && a.Role == Roles.Writter);
+            if (User.IsInRole(Roles.Teacher) && isTeacherBook == null) return View("AccessDenied");
             
-            // validate true teachers
-            var existingTeachers = _context.Teachers.Select(i => i.Id).ToList();
-            var authorIds = book.TeacherIds.All(t => existingTeachers.Contains(t));
-            if (authorIds == false)
-                return NotFound();
+            var adminId = book.TeacherIds.SingleOrDefault(i => i == userId);
+            if (!book.TeacherIds.Any() || adminId == null)
+            {
+                var filePath = $@"{environment.WebRootPath}{bookInDb.BookPath}";
+                fileProductivitySvc.Remove(filePath);
+                bookRepository.Remove(bookInDb);
+                await context.SaveChangesAsync();
+                return RedirectToPanel();
+            }
+
+            if (!validTeachers(book.TeacherIds)) return View("AccessDenied");
+            if (!ModelState.IsValid) return View(book);
+
+            mapper.Map<BookViewModel, Models.Book>(book, bookInDb);
+            bookInDb.UpdatedDate = DateTime.Now;
             
-            // getting clean authorList
-            var authorList = GetAuthorList(book.TeacherIds);
-
-            var currentPath = bookInDb.BookPath;
+            book.TeacherIds.Remove(userId);
             
-            if (ExistPath(authorList, currentPath))
+            bookInDb.TeacherBooks.Where(t => t.BookId == bookInDb.Id && t.TeacherId != userId)
+            .ToList().ForEach(teacher => bookInDb.TeacherBooks.Remove(teacher));
+            await context.SaveChangesAsync();
+
+            var numOrder = 1;
+            foreach (var teacher in book.TeacherIds)
             {
-                var authorId = authorList.Select(i => i.Id).FirstOrDefault();
-                currentPath = $@"/bucket/{authorId}/book/";
-                if (BookFile == null)
-                {
-                    var fileName = Path.GetFileName(bookInDb.BookPath);
-                    var sourcePath = $@"{_environment.WebRootPath}{bookInDb.BookPath}";
-                    var destPath = $@"{_environment.WebRootPath}{currentPath}{fileName}";
-                    var physicalPath = $@"{_environment.WebRootPath}{currentPath}";
-
-                    if (!Directory.Exists(physicalPath))
-                        Directory.CreateDirectory(physicalPath);
-
-                    if (!System.IO.File.Exists(destPath))
-                    {
-                        System.IO.File.Move(sourcePath, destPath);
-                        currentPath = Path.Combine(currentPath, fileName);
-                    }
-                }
+                var teacherBooks = new TeacherBook 
+                { TeacherId = teacher, BookId = bookInDb.Id, Order = ++numOrder, Role = Roles.Reader};
+                context.TeacherBooks.Add(teacherBooks);
             }
-            // adding new file
-            if (BookFile != null)
-            {
-                // validating file
-                if (!IsValidFile(BookFile))
-                {
-                    ListItems(book);
-                    return View();
-                }
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(BookFile.FileName);
-                var bucket = $@"/bucket/{userId}/book/";
-                var userPath = $@"{_environment.WebRootPath}{bucket}";
-                var directory = Path.GetDirectoryName(currentPath);
-                var physicalPath = $@"{_environment.WebRootPath}{directory}";
 
-                if (!Directory.Exists(physicalPath))
-                    Directory.CreateDirectory(physicalPath);
+            await context.SaveChangesAsync();
 
-                var fullPath = Path.Combine(physicalPath, fileName);
-                var oldPath = $@"{_environment.WebRootPath}{bookInDb.BookPath}";
-
-                System.IO.File.Delete(oldPath);
-
-                using (var stream = new FileStream(fullPath, FileMode.Create))
-                {
-                    await BookFile.CopyToAsync(stream);
-                }
-
-                currentPath = $@"{directory}/{fileName}";
-            }
-            if (ModelState.IsValid)
-            {
-                bookInDb.Title = book.Title;
-                bookInDb.Abstract = book.Abstract;
-                bookInDb.UpdatedDate = DateTime.Now;
-                bookInDb.BookPath = currentPath;
-                bookInDb.EditionDate = book.EditionDate;
-                bookInDb.Year = book.Year;
-                bookInDb.ISBN = book.ISBN;
-                bookInDb.Edition = book.Edition;
-                bookInDb.Editorial = book.Editorial;
-                bookInDb.PrintLength = book.PrintLength;
-                bookInDb.Genre = book.Genre;
-
-                await _context.SaveChangesAsync();
-
-                bookInDb.TeacherBooks.Where(t => t.BookId == bookInDb.Id)
-                .ToList().ForEach(teacher => bookInDb.TeacherBooks.Remove(teacher));
-                await _context.SaveChangesAsync();
-                foreach (var teacher in authorList)
-                {
-                    var teacherBooks = new TeacherBook { TeacherId = teacher.Id, BookId = bookInDb.Id, Order = teacher.Order };
-                    _context.TeacherBooks.Add(teacherBooks);
-                }
-                await _context.SaveChangesAsync();
-            }
-            else
-            {
-                ListItems(book);
-                return View(book);
-            }
-            
-            return RedirectToView();
+            return RedirectToPanel();
         }
 
         // POST: /Book/Delete
         [HttpPost]
         [Authorize(Roles = Roles.AdminAndTeacher)]
-        [ValidateAntiForgeryToken]
         public IActionResult Delete(int id)
         {
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
+            if (userId == null) return View("Error");
 
+            var bookInDb = context.Books.FirstOrDefault(t => t.Id == id);
+            if (bookInDb == null) return View("NotFound");
 
-            var bookInDb = _context.Books.SingleOrDefault(t => t.Id == id);
-            if (bookInDb == null)
-                return NotFound();
+            var IsTeacherBook = context.TeacherBooks.FirstOrDefault(a => a.BookId == bookInDb.Id && a.TeacherId == userId);
+            if (User.IsInRole(Roles.Teacher) && IsTeacherBook == null) return View("NotFound");
 
-            var oldPath = $@"{_environment.WebRootPath}{bookInDb.BookPath}";
+            var filePath = $@"{environment.WebRootPath}{bookInDb.BookPath}";
 
-            if (System.IO.File.Exists(oldPath))
-                System.IO.File.Delete(oldPath);
+            fileProductivitySvc.Remove(filePath);
+            context.Books.Remove(bookInDb);
+            context.SaveChanges();
 
-            _context.Books.Remove(bookInDb);
-            _context.SaveChanges();
-
-            return RedirectToView();
-
+            return RedirectToPanel();
         }
 
         #region helpers
-        private void ListItems(BookViewModel book)
-        {
-            book.Teachers = _context.TeacherBooks.Where(b => b.BookId == book.Id).Select(t => t.Teacher).ToList();
-        }
-        private IActionResult RedirectToView()
+
+        private IActionResult RedirectToPanel()
         {
             if (User.IsInRole(Roles.Admin))
-                return RedirectToAction(nameof(BookController.ListAll));
+                return RedirectToAction(nameof(BookController.Manage));
 
             return RedirectToAction(nameof(BookController.List));
         }
-        public bool IsValidFile(IFormFile file)
-        {
-            // validate maximum file length
-            if (file.Length > 31457280)
-            {
-                ModelState.AddModelError(string.Empty, "No se permiten archvios mayores de 30MB");
-                return false;
-            }
-            // validate no empty files
-            if (file.Length == 0)
-            {
-                ModelState.AddModelError(string.Empty, "No se permiten archvios vacios");
-                return false;
-            }
-            // validate file type 
-            if (!file.FileName.EndsWith(".pdf"))
-            {
-                ModelState.AddModelError(string.Empty, "Solo se permiten archivos con extension .pdf");
-                return false;
-            }
-            return true;
-        }
-        public bool ExistPath(List<Author> authorIds, string currentPath)
-        {
-            var fileName = Path.GetFileName(currentPath);
-            foreach (var author in authorIds)
-            {
-                var bucket = $@"/bucket/{author.Id}/book/{fileName}";
-                if (bucket == currentPath)
-                    return false;
-            }
-            return true;
-        }
-        public static List<Author> GetAuthorList(List<string> authorIds)
-        {
-            var order = 1;
-            var authorList = new List<Author>();
-            var cleanAuthorIds = authorIds.Distinct().ToList();
-            foreach (var author in cleanAuthorIds)
-            {
-                var newAuthor = new Author { Id = author, Order = order++ };
-                authorList.Add(newAuthor);
-            }
-            return authorList;
-        }
 
-        private void AddErrors(IdentityResult result)
+        private bool validTeachers(List<string> teacherIds)
         {
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-        }
+            var existingTeachers = context.Teachers.Select(i => i.Id).ToList();
+            var teachers = teacherIds.All(t => existingTeachers.Contains(t));
 
+            return teachers;
+        }
         private IActionResult RedirectToLocal(string returnUrl)
         {
             if (Url.IsLocalUrl(returnUrl))
-            {
                 return Redirect(returnUrl);
-            }
             else
-            {
                 return RedirectToAction(nameof(HomeController.Index), "Home");
-            }
-
         }
         #endregion
     }

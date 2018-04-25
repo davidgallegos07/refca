@@ -13,13 +13,13 @@
     {
         @await Html.PartialAsync("_TeacherBar")
     }
-    <!-- Navigation -->
+    
     <div id="page-wrapper">
         <div class="row">
             <div class="col-lg-12">
-                <h2 class="page-header">@ViewData["Title"]</h2>
+                <h3 class="page-header">@ViewData["Title"]</h2>
             </div>
-            <!-- /.col-lg-12 -->
+            
         </div>
         <form asp-controller="Book" asp-action="Edit" enctype="multipart/form-data" method="post">
             <div class="form-horizontal">

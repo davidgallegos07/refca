@@ -1,31 +1,51 @@
-<div class='main-nav'>
-    <div class='navbar navbar-inverse'>
-        <div class='navbar-header'>
-            <button type='button' class='navbar-toggle' data-toggle='collapse' data-target='.navbar-collapse'>
-                <span class='sr-only'>Toggle navigation</span>
-                <span class='icon-bar'></span>
-                <span class='icon-bar'></span>
-                <span class='icon-bar'></span>
-            </button>
-            <a class='navbar-brand' [routerLink]="['/home']">refca</a>
+﻿<div class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <a [routerLink]="['/home']" class="navbar-brand">REFCA</a>
+            <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
         </div>
-        <div class='clearfix'></div>
-        <div class='navbar-collapse collapse'>
-            <ul class='nav navbar-nav'>
-                <li [routerLinkActive]="['link-active']">
-                    <a [routerLink]="['/home']">
-                        <span class='glyphicon glyphicon-home'></span> Home
-                    </a>
+        <div class="navbar-collapse collapse" id="navbar-main">
+            <ul class="nav navbar-nav">
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="themes">Productividad <span class="caret"></span></a>
+                    <ul class="dropdown-menu" aria-labelledby="themes">
+                        <li>
+                            <a [routerLink]="['/articles']">Artículos</a>
+                        </li>
+                        <li>
+                            <a [routerLink]="['/chapterbooks']">Capitulos de libro</a>
+                        </li>
+                        <li>
+                            <a [routerLink]="['/research']">Investigaciones</a>
+                        </li>
+                        <li>
+                            <a [routerLink]="['/books']">Libros</a>
+                        </li>
+                        <li>
+                            <a [routerLink]="['/presentations']">Presentaciones</a>
+                        </li>
+                        <li>
+                            <a [routerLink]="['/magazines']">Revistas</a>
+                        </li>
+                        <li>
+                            <a [routerLink]="['/theses']">Tesis</a>
+                        </li>
+                    </ul>
                 </li>
-                <li [routerLinkActive]="['link-active']">
-                    <a [routerLink]="['/counter']">
-                        <span class='glyphicon glyphicon-education'></span> Counter
-                    </a>
+                <li>
+                    <a [routerLink]="['/teachers']">Docentes</a>
                 </li>
-                <li [routerLinkActive]="['link-active']">
-                    <a [routerLink]="['/fetch-data']">
-                        <span class='glyphicon glyphicon-th-list'></span> Fetch data
-                    </a>
+                <li>
+                    <a [routerLink]="['/help']">Ayuda</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a href="/Account/Login">Login</a>
                 </li>
             </ul>
         </div>

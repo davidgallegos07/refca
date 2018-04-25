@@ -1,0 +1,53 @@
+<div class="tab-pane" id="chapterbooks">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                <input type="text" class="form-control" [(ngModel)]="query.searchTerm" (keyup.enter)="onFilterChange()" placeholder="Buscar Capítulo Por Título, Título de libro, ISBN o Editorial">
+            </div>
+        </div>
+    </div>
+    <br />
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Libro</th>
+                    <th>ISBN</th>
+                    <th>Fecha de publicación</th>
+                    <th>Editorial</th>
+                    <th>Archivo</th>
+                    <th>Autor(es)</th>
+                </tr>
+            </thead>
+            <tbody id="items">
+                <tr *ngFor="let c of chapterbooks.items">
+                    <td>{{c?.title}}</td>
+                    <td>{{c?.bookTitle}}</td>
+                    <td>{{c?.isbn}}</td>
+                    <td>{{c?.publishedDate | date}}</td>
+                    <td>{{c?.editorial}}</td>
+                    <td>
+                        <a target="_blank" href="{{c?.chapterbookPath}}"><i class="fa fa-download"></i> 
+                            <span>Descargar</span> 
+                        </a>
+                    </td>
+                    <td>
+                        <p *ngFor="let teacher of c.teacherChapterbooks">{{teacher.name}}</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <ul *ngIf="pager.pages  && pager.pages.length" class="pagination">
+            <li [ngClass]="{disabled:pager.currentPage === 1}">
+                <a (click)="onFilterChange(pager.currentPage - 1)">&laquo;</a>
+            </li>
+            <li *ngFor="let page of pager.pages" [ngClass]="{active:pager.currentPage === page}">
+                <a (click)="onFilterChange(page)">{{page}}</a>
+            </li>
+            <li [ngClass]="{disabled:pager.currentPage === pager.totalPages}">
+                <a (click)="onFilterChange(pager.currentPage + 1)">&raquo;</a>
+            </li>
+        </ul>
+    </div>
+</div>

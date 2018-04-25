@@ -1,0 +1,83 @@
+﻿@{
+    ViewData["Title"] = "Tesis";
+}
+
+@using (Html.BeginForm(null, null, FormMethod.Post, new { id = "__AjaxAntiForgeryForm" }))
+{
+    @Html.AntiForgeryToken()
+}
+
+<div id="wrapper">
+    @await Html.PartialAsync("_AdminBar")
+    <div id="page-wrapper">
+        <div class="row">
+            <div class="col-lg-12">
+                <h3 class="page-header">@ViewData["Title"]</h2>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading"></div>
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="search-box" placeholder="Buscar Tesis Por Título">
+                                    <span class="input-group-btn">
+                                    <button class="btn btn-link" type="button" id="search-btn"><i class="fa fa-search" aria-hidden="true"></i></button>
+                                    </span>
+                                </div>   
+                            </div>  
+                            <div class="col-md-6">                           
+                                <span>Tesis aprobados</span>
+                                <label class="switch">
+                                <input id="isApproved" type="checkbox" checked>
+                                <span class="slider round"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <select name="educationProgramId" id="educationProgramId" class="form-control">
+                                        <option>Programa educativo</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <select name="researchLineId" id="researchLineId" class="form-control">
+                                        <option>Línea de investigación</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <table style="width:100%" class="table table-striped table-bordered table-hover" id="tableEntity">
+                            <thead>
+                                <tr>
+                                    <th>Título</th>
+                                    <th>Alumno</th>
+                                    <th>Línea de investigación</th>
+                                    <th>Programa educativo</th>
+                                    <th>Director(es)</th>
+                                    <th>Archivo</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                        <ul id="pagination" class="pagination-sm"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_AdministrationList"); }
+    @{ await Html.RenderPartialAsync("_DataTable"); }
+    <script src="~/Assets/js/features/theses/theses-table.js"></script>
+}

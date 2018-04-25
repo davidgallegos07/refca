@@ -18,14 +18,14 @@ namespace refca.Features.Admin
 {
     public class AdminController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly RefcaDbContext _context;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IAuthorizationService _authorizationService;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ILogger _logger;
 
-        public AdminController(ApplicationDbContext context,
+        public AdminController(RefcaDbContext context,
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             RoleManager<IdentityRole> roleManager,

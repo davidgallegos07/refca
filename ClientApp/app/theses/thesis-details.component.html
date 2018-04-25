@@ -1,0 +1,47 @@
+<div class="panel panel-default container">
+    <div class="panel-body">
+        <div class="row">
+            <div class="panel-title">
+                <div class="col-md-12">
+                    <h3>{{thesis?.title}}</h3>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Alumno</strong></div>
+                <div class="col-md-6">{{thesis?.studentName}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Fecha de publicación</strong></div>
+                <div class="col-md-6">{{thesis?.publishedDate | date}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Programa educativo</strong></div>
+                <div class="col-md-6">{{thesis?.educationProgram.name}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Línea de investigación</strong></div>
+                <div class="col-md-6">{{thesis?.researchLine.name}}</div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Archivo</strong></div>
+                <div class="col-md-6">
+                    <a target="_blank" href="{{thesis?.thesisPath}}"><i class="fa fa-download"></i> Descargar</a>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="divider"></div>
+                <div class="col-md-6"><strong>Director(es)</strong></div>
+                <div class="col-md-6">
+                    <div *ngFor="let teacher of thesis?.teacherTheses">
+                        {{teacher.name}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

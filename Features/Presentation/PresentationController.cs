@@ -15,7 +15,7 @@ using refca.Features.Home;
 using refca.Models.Identity;
 using refca.Models.PresentationViewModels;
 using AutoMapper;
-using refca.Dtos;
+using refca.Resources;
 using System.Collections.Generic;
 
 namespace refca.Features.Presentation
@@ -23,61 +23,25 @@ namespace refca.Features.Presentation
     [Authorize]
     public class PresentationController : Controller
     {
-        private ApplicationDbContext _context;
+        private RefcaDbContext _context;
         private IHostingEnvironment _environment;
         private UserManager<ApplicationUser> _userManager;
+        private readonly IMapper mapper;
 
-        public PresentationController(ApplicationDbContext context, UserManager<ApplicationUser> userManager,
-            IHostingEnvironment environment)
+        public PresentationController(RefcaDbContext context, UserManager<ApplicationUser> userManager,
+            IHostingEnvironment environment, IMapper mapper)
         {
+            this.mapper = mapper;
             _context = context;
             _userManager = userManager;
             _environment = environment;
         }
 
-        // GET: /Presentation/ListAll
+        // GET: /Presentation/Manage
         [Authorize(Roles = Roles.Admin)]
-        public async Task<IActionResult> ListAll(string returnUrl = null)
+        public IActionResult Manage()
         {
-            ViewData["ReturnUrl"] = returnUrl;
-
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
-
-            var presentations = await _context.Presentations
-               .Include(b => b.TeacherPresentations)
-                   .ThenInclude(b => b.Teacher)
-               .Where(p => p.IsApproved == true)
-              .OrderBy(d => d.AddedDate)
-              .ToListAsync();
-            presentations.ForEach(presentation => presentation.TeacherPresentations = presentation.TeacherPresentations.OrderBy(o => o.Order).ToList());
-
-            var results = Mapper.Map<IEnumerable<PresentationWithTeachersDto>>(presentations);
-            return View(results);
-
-        }
-
-        // GET: /Presentation/ListUnapproved
-        [Authorize(Roles = Roles.Admin)]
-        public async Task<IActionResult> ListUnapproved(string returnUrl = null)
-        {
-            ViewData["ReturnUrl"] = returnUrl;
-
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
-
-            var presentations = await _context.Presentations
-               .Include(b => b.TeacherPresentations)
-                   .ThenInclude(b => b.Teacher)
-              .Where(p => p.IsApproved == false)
-              .OrderBy(d => d.AddedDate)
-              .ToListAsync();
-            presentations.ForEach(presentation => presentation.TeacherPresentations = presentation.TeacherPresentations.OrderBy(o => o.Order).ToList());
-
-            var results = Mapper.Map<IEnumerable<PresentationWithTeachersDto>>(presentations);
-            return View(results);
+            return View();
         }
 
         // GET: /Presentation/IsApproved
@@ -92,7 +56,7 @@ namespace refca.Features.Presentation
             var presentationInDb = await _context.Presentations.SingleOrDefaultAsync(t => t.Id == id);
             if (presentationInDb == null)
             {
-                return NotFound();
+                return View("NotFound");
             }
             if (ModelState.IsValid)
             {
@@ -108,7 +72,7 @@ namespace refca.Features.Presentation
                 await _context.SaveChangesAsync();
             }
 
-            return RedirectToAction(nameof(PresentationController.ListUnapproved));
+            return RedirectToAction(nameof(PresentationController.Manage));
         }
 
         // GET: /Presentation/List 
@@ -127,7 +91,7 @@ namespace refca.Features.Presentation
               .ToListAsync();
             presentations.ForEach(presentation => presentation.TeacherPresentations = presentation.TeacherPresentations.OrderBy(o => o.Order).ToList());
 
-            var results = Mapper.Map<IEnumerable<PresentationWithTeachersDto>>(presentations);
+            var results = mapper.Map<IEnumerable<PresentationResource>>(presentations);
             return View(results);
         }
 
@@ -165,8 +129,8 @@ namespace refca.Features.Presentation
             var existingTeachers = _context.Teachers.Select(i => i.Id).ToList();
             var authorIds = presentation.TeacherIds.All(t => existingTeachers.Contains(t));
             if (authorIds == false)
-                return NotFound();
-                
+                return View("NotFound");
+
             // getting clean authorList
             var authorList = GetAuthorList(presentation.TeacherIds);
             if (PresentationFile != null)
@@ -230,7 +194,7 @@ namespace refca.Features.Presentation
 
             var presentation = await _context.Presentations.SingleOrDefaultAsync(t => t.Id == id);
             if (presentation == null)
-                return NotFound();
+                return View("NotFound");
 
             var viewModel = new PresentationViewModel
             {
@@ -259,7 +223,7 @@ namespace refca.Features.Presentation
 
             var presentationInDb = _context.Presentations.Include(tb => tb.TeacherPresentations).SingleOrDefault(t => t.Id == id);
             if (presentationInDb == null)
-                return NotFound();
+                return View("NotFound");
 
             // Validate null teachersIds
             if (!presentation.TeacherIds.Any())
@@ -273,7 +237,7 @@ namespace refca.Features.Presentation
             var existingTeachers = _context.Teachers.Select(i => i.Id).ToList();
             var authorIds = presentation.TeacherIds.All(t => existingTeachers.Contains(t));
             if (authorIds == false)
-                return NotFound();
+                return View("NotFound");
 
             // getting clean authorList
             var authorList = GetAuthorList(presentation.TeacherIds);
@@ -327,7 +291,7 @@ namespace refca.Features.Presentation
                 using (var stream = new FileStream(fullPath, FileMode.Create))
                 {
                     await PresentationFile.CopyToAsync(stream);
-                }                    
+                }
 
                 currentPath = $@"{directory}/{fileName}";
             }
@@ -374,7 +338,7 @@ namespace refca.Features.Presentation
 
             var presentationInDb = _context.Presentations.SingleOrDefault(t => t.Id == id);
             if (presentationInDb == null)
-                return NotFound();
+                return View("NotFound");
 
             var oldPath = $@"{_environment.WebRootPath}{presentationInDb.PresentationPath}";
 
@@ -398,7 +362,7 @@ namespace refca.Features.Presentation
         private IActionResult RedirectToView()
         {
             if (User.IsInRole(Roles.Admin))
-                return RedirectToAction(nameof(PresentationController.ListAll));
+                return RedirectToAction(nameof(PresentationController.Manage));
 
             return RedirectToAction(nameof(PresentationController.List));
         }

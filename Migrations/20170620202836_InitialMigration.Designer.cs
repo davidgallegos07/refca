@@ -7,7 +7,7 @@ using refca.Data;
 
 namespace refca.Migrations
 {
-    [DbContext(typeof(ApplicationDbContext))]
+    [DbContext(typeof(RefcaDbContext))]
     [Migration("20170620202836_InitialMigration")]
     partial class InitialMigration
     {

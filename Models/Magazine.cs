@@ -18,6 +18,7 @@ namespace refca.Models
         public DateTime AddedDate { get; set; }
         public bool IsApproved { get; set; }
         public string MagazinePath { get; set; }
+        public string Owner { get; set; }
 
         public ICollection<TeacherMagazine> TeacherMagazines { get; set; }
     }

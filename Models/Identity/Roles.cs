@@ -10,6 +10,8 @@ namespace refca.Models.Identity
         public const string Admin = "ADMIN";
         public const string Teacher = "TEACHER";
         public const string Owner = "OWNER";
+        public const string Writter = "WRITTER";
+        public const string Reader = "READER";
         public const string AdminAndTeacher = Admin+","+ Teacher;
     }
 }

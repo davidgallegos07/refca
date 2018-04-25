@@ -17,6 +17,7 @@ namespace refca.Models
         public string Editorial { get; set; }
         public string ChapterbookPath { get; set; }
         public bool IsApproved { get; set; }
+        public string Owner { get; set; }
 
         public ICollection<TeacherChapterbook> TeacherChapterbooks { get; set; }
     }

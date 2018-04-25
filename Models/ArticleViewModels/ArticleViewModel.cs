@@ -4,7 +4,8 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
-
+using refca.Resources;
+using refca.Models.CustomModelValidation;
 namespace refca.Models.ArticleViewModels
 {
     public class ArticleViewModel
@@ -27,13 +28,9 @@ namespace refca.Models.ArticleViewModels
         public DateTime EditionDate { get; set; } 
 
         [Required(ErrorMessage = "El ISSN es requerido")]
-        [Range(1, 99999999, ErrorMessage = "Ingresa un numero entero valido")]
+        [Range(1, 99999999, ErrorMessage = "Ingresa un número entero valido")]
         [Display(Name = "ISSN")]
         public int ISSN { get; set; }
-
-        [Display(Name = "Archivo de capítulo de libro")]
-        public IFormFile ArticleFile { get; set; }
-
         public IEnumerable<Teacher> Teachers { get; set; }
         public List<string> TeacherIds { get; set; }
         public ArticleViewModel()

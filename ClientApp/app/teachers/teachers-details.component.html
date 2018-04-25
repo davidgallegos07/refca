@@ -1,0 +1,62 @@
+<loading-spinner *ngIf="loading">
+<div class="container-fluid profile-banner">
+    <div class="profile-pic">
+        <div *ngIf="teacher?.avatar != null">
+            <img class="img-thumbnail" src="{{teacher?.avatar}}" alt="">
+        </div>
+        <h1 class="profile-banner">{{teacher?.name}}</h1>
+        <h5>{{teacher?.biography}}</h5>
+    </div><br>
+</div>
+<br>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-3">
+
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-3">
+            <ul class="list-group">
+                <li class="list-group-item text-right"><span class="pull-left">Perfil</span><i class="fa fa-user fa-2x"></i></li>
+                <li class="list-group-item text-right"><span class="pull-left">Nombre</span>{{teacher?.name}}</li>
+                <li class="list-group-item text-right"><span class="pull-left">Email</span>{{teacher?.email}}</li>
+                <li class="list-group-item text-right">
+                    <span class="pull-left">Contacto</span>
+                    <a target="_blank" href="{{teacher?.facebookProfile}}" title="Facebook"><i class="fa fa-facebook" style="margin-left:10px"></i></a>
+                    <a target="_blank" href="{{teacher?.twitterProfile}}" title="Twitter"><i class="fa fa-twitter" style="margin-left:10px"></i></a>
+                    <a target="_blank" href="{{teacher?.webSite}}" title="Website"><i class="fa fa-globe" style="margin-left:10px"></i></a>
+                </li>
+                 <li class="list-group-item text-right">
+                    <span class="pull-left">Curriculum</span>
+                    <a target="_blank" href="{{teacher?.curriculumPath}}"><i class="fa fa-download"></i> Descargar</a>
+                </li>
+            </ul>
+            <ul class="list-group">
+                <li class="list-group-item">Productividad<span class="pull-right"><i class="fa fa-dashboard fa-2x"></i></span></li>
+                <li class="list-group-item"><span class="badge">{{articlesCount}}</span>Artículos</li>
+                <li class="list-group-item"><span class="badge">{{booksCount}}</span>Libros</li>
+                <li class="list-group-item"><span class="badge">{{chbooksCount}}</span>Capítulo de libro</li>
+                <li class="list-group-item"><span class="badge">{{researchCount}}</span>Investigaciones</li>
+                <li class="list-group-item"><span class="badge">{{magazinesCount}}</span>Revistas</li>
+                <li class="list-group-item"><span class="badge">{{presentationsCount}}</span>Presentaciones</li>
+                <li class="list-group-item"><span class="badge">{{thesesCount}}</span>Tesis</li>
+            </ul>
+        </div>
+        <div class="col-sm-9">
+            <ul class="nav nav-tabs" id="myTab">
+                <li><a [routerLink]="['articles']">Articles</a></li>
+                <li><a [routerLink]="['books']">Libros</a></li>
+                <li><a [routerLink]="['chapterbooks']">Capitulos de libro</a></li>
+                <li><a [routerLink]="['research']">Investigaciones</a></li>
+                <li><a [routerLink]="['magazines']">Revistas</a></li>
+                <li><a [routerLink]="['presentations']">Presentaciones</a></li>
+                <li><a [routerLink]="['theses']">Tesis</a></li>
+            </ul>
+            <div class="tab-content">
+                <router-outlet></router-outlet>
+            </div>
+        </div>
+    </div>
+</div>
+</loading-spinner>

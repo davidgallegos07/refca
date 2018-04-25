@@ -17,8 +17,8 @@ namespace refca.Models.TeacherViewModels
         [Display(Name = "Nombre")]
         public string Name { get; set; }
 
-        [Required(ErrorMessage = "El numero de empleado es requerido")]
-        [Range(0, int.MaxValue, ErrorMessage = "Ingresa un numero entero valido")]
+        [Required(ErrorMessage = "El número de empleado es requerido")]
+        [Range(0, int.MaxValue, ErrorMessage = "Ingresa un número entero valido")]
         [Display(Name = "Número de Empleado")]
         public int TeacherCode { get; set; }
 

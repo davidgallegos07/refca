@@ -26,6 +26,8 @@ namespace refca.Models
         public AcademicBody AcademicBody { get; set; } 
         public int ResearchLineId { get; set; }
         public ResearchLine ResearchLine { get; set; }
+        public string Owner { get; set; }
+
         public ICollection<TeacherResearch> TeacherResearch { get; set; }
 
     }

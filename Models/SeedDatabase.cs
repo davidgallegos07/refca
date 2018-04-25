@@ -22,7 +22,7 @@ namespace refca.Models
         {
             using (var serviceScope = serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope())
             {
-                var context = serviceScope.ServiceProvider.GetService<ApplicationDbContext>();
+                var context = serviceScope.ServiceProvider.GetService<RefcaDbContext>();
                 var userManager = serviceProvider.GetService<UserManager<ApplicationUser>>();
                 var roleManager = serviceProvider.GetService<RoleManager<IdentityRole>>();
                 var roleStore = serviceProvider.GetService<RoleStore<IdentityRole>>();
@@ -89,7 +89,7 @@ namespace refca.Models
                         new EducationProgram { Name = "Licenciatura en Negocios Internacionales", Grade = "Licenciatura" },
                         new EducationProgram { Name = "Especialidad en Dirección Financiera", Grade = "Posgrado" },
                         new EducationProgram { Name = "Maestría en Impuestos", Grade = "Posgrado" },
-                        new EducationProgram { Name = "Maestria en Administracion", Grade = "Posgrado" },
+                        new EducationProgram { Name = "Maestria en Administración", Grade = "Posgrado" },
                         new EducationProgram { Name = "Maestría en gestión de las Tecnologías de la Información y la Comunicación", Grade = "Posgrado" },
                         new EducationProgram { Name = "Doctorado en Ciencias Administrativas", Grade = "Posgrado" }
 

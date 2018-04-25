@@ -2,37 +2,44 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
 using refca.Data;
-using Microsoft.EntityFrameworkCore;
 using AutoMapper;
-using refca.Dtos;
+using refca.Resources;
+using refca.Resources.TeacherResources;
+using refca.Resources.TeacherQueryResources;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
+using refca.Repositories;
+using refca.Models;
+using Microsoft.AspNetCore.Authorization;
+using refca.Models.Identity;
+using refca.Models.QueryFilters;
+using refca.Core;
 
 namespace refca.Api
 {
     [Route("api/[controller]")]
     public class ArticlesController : Controller
     {
-        private ApplicationDbContext _context;
-
-        public ArticlesController(ApplicationDbContext context)
+        private RefcaDbContext _context;
+        private readonly IMapper mapper;
+        private readonly IArticleRepository _articleRepository;
+        public ArticlesController(RefcaDbContext context, IMapper mapper, IArticleRepository articleRepository)
         {
+            this.mapper = mapper;
             _context = context;
+            _articleRepository = articleRepository;
         }
-
-        // GET: api/articles
+        
+        // GET: api/articles?{query}
         [HttpGet]
-        public IEnumerable<ArticleWithTeachersDto> Get()
+        public async Task<QueryResultResource<ArticleResource>> GetArticles(TeacherArticleQueryResource filterResource)
         {
-            var articles =  _context.Articles
-               .Include(tp => tp.TeacherArticles)
-                   .ThenInclude(t => t.Teacher)
-               .Where(p => p.IsApproved == true)
-               .OrderBy(d => d.AddedDate)
-               .ToList();
-                articles.ForEach(article => article.TeacherArticles = article.TeacherArticles.OrderBy(o => o.Order).ToList());
+            var filter = mapper.Map<TeacherArticleQueryResource, ArticleQuery>(filterResource);
+            var queryResult = await _articleRepository.GetArticles(filter);
 
-            return Mapper.Map<IEnumerable<ArticleWithTeachersDto>>(articles);
+            return mapper.Map<QueryResult<Article>, QueryResultResource<ArticleResource>>(queryResult);
+            //return mapper.Map<QueryResult<ArticleResource>, QueryResultResource<ArticleResource>>(queryResult);            
         }
 
         // GET: api/articles/count
@@ -52,12 +59,13 @@ namespace refca.Api
                     .ThenInclude(t => t.Teacher)
                  .Where(p => p.IsApproved == true)
                  .SingleOrDefaultAsync(t => t.Id == id);
-                 article.TeacherArticles = article.TeacherArticles.OrderBy(o => o.Order).ToList();
 
             if (article == null)
                 return NotFound();
 
-            return Ok(Mapper.Map<ArticleWithTeachersDto>(article));
+            article.TeacherArticles = article.TeacherArticles.OrderBy(o => o.Order).ToList();
+
+            return Ok(mapper.Map<ArticleResource>(article));
         }
     }
 }

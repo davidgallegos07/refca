@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Net.Http.Headers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using refca.Data;
@@ -15,70 +14,39 @@ using refca.Features.Home;
 using refca.Models.Identity;
 using refca.Models.ArticleViewModels;
 using AutoMapper;
-using refca.Dtos;
 using System.Collections.Generic;
+using refca.Repositories;
+using refca.Core;
+using refca.Models.FileViewModel;
 
 namespace refca.Features.Article
 {
     [Authorize]
     public class ArticleController : Controller
     {
-        private ApplicationDbContext _context;
-        private IHostingEnvironment _environment;
-        private UserManager<ApplicationUser> _userManager;
+        private RefcaDbContext context;
+        private IHostingEnvironment environment;
+        private UserManager<ApplicationUser> userManager;
+        private readonly IMapper mapper;
+        private IArticleRepository articleRepository;
+        private readonly IFileProductivityService fileProductivitySvc;
 
-        public ArticleController(ApplicationDbContext context, UserManager<ApplicationUser> userManager,
-            IHostingEnvironment environment)
+        public ArticleController(RefcaDbContext context, UserManager<ApplicationUser> userManager,
+        IHostingEnvironment environment, IMapper mapper, IArticleRepository articleRepository, IFileProductivityService fileProductivitySvc)
         {
-            _context = context;
-            _userManager = userManager;
-            _environment = environment;
+            this.mapper = mapper;
+            this.context = context;
+            this.userManager = userManager;
+            this.environment = environment;
+            this.articleRepository = articleRepository;
+            this.fileProductivitySvc = fileProductivitySvc;
         }
 
-        // GET: /Article/ListAll
+        // GET: /Article/Manage
         [Authorize(Roles = Roles.Admin)]
-        public async Task<IActionResult> ListAll(string returnUrl = null)
+        public IActionResult Manage()
         {
-            ViewData["ReturnUrl"] = returnUrl;
-
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
-
-            var articles = await _context.Articles
-                .Include(ta => ta.TeacherArticles)
-                    .ThenInclude(t => t.Teacher)
-                .Where(p => p.IsApproved == true)
-                .OrderBy(d => d.AddedDate)
-                .ToListAsync();
-                articles.ForEach(article => article.TeacherArticles = article.TeacherArticles.OrderBy(o => o.Order).ToList());
-
-            var results = Mapper.Map<IEnumerable<ArticleWithTeachersDto>>(articles);
-            return View(results);
-
-        }
-
-        // GET: /Article/ListUnapproved
-        [Authorize(Roles = Roles.Admin)]
-        public async Task<IActionResult> ListUnapproved(string returnUrl = null)
-        {
-            ViewData["ReturnUrl"] = returnUrl;
-
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
-
-            var articles = await _context.Articles
-                .Include(ta => ta.TeacherArticles)
-                    .ThenInclude(t => t.Teacher)
-                .Where(p => p.IsApproved == false)
-                .OrderBy(d => d.AddedDate)
-                .ToListAsync();
-                articles.ForEach(article => article.TeacherArticles = article.TeacherArticles.OrderBy(o => o.Order).ToList());
-                
-            var results = Mapper.Map<IEnumerable<ArticleWithTeachersDto>>(articles);
-            return View(results);
-
+            return View();
         }
 
         // GET: /Article/IsApproved
@@ -86,54 +54,58 @@ namespace refca.Features.Article
         public async Task<IActionResult> IsApproved(int id, string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
 
-            var articleInDb = await _context.Articles.SingleOrDefaultAsync(t => t.Id == id);
-            if (articleInDb == null)
-                return NotFound();
+            var articleInDb = await context.Articles.SingleOrDefaultAsync(t => t.Id == id);
+            if (articleInDb == null) return View("NotFound");
 
-            if (ModelState.IsValid)
-            {
-                if (articleInDb.IsApproved == true)
-                {
-                    articleInDb.IsApproved = false;
-                }
-                else
-                {
-                    articleInDb.IsApproved = true;
-                }
+            articleInDb.IsApproved = articleInDb.IsApproved == true ? articleInDb.IsApproved = false : articleInDb.IsApproved = true;
+            await context.SaveChangesAsync();
 
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToAction(nameof(ArticleController.ListUnapproved));
+            return RedirectToAction(nameof(ArticleController.Manage));
         }
 
         // GET: /Article/List 
         [HttpGet]
         [Authorize(Roles = Roles.Teacher)]
-        public async Task<IActionResult> List(string returnUrl = null)
+        public IActionResult List()
         {
-            ViewData["ReturnUrl"] = returnUrl;
-
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
-
-            var articles = await _context.Articles
-                .Where(ta => ta.TeacherArticles.Any(t => t.TeacherId == userId))
-                .Include(ta => ta.TeacherArticles)
-                    .ThenInclude(t => t.Teacher)
-                .OrderBy(d => d.AddedDate)
-                .ToListAsync();
-                articles.ForEach(article => article.TeacherArticles = article.TeacherArticles.OrderBy(o => o.Order).ToList());
-            
-            var results = Mapper.Map<IEnumerable<ArticleWithTeachersDto>>(articles);
-            return View(results);
+            return View();
         }
 
+        // GET: /Article/Upload
+        [HttpGet]
+        public async Task<IActionResult> Upload(int id)
+        {
+            var articleInDb = await articleRepository.GetArticle(id);
+            if (articleInDb == null) return RedirectToPanel();
+
+            return View(new FileViewModel { Id = id });
+        }
+        
+        // POST: /Article/Upload
+        [HttpPost]
+        [Authorize(Roles = Roles.Teacher)]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Upload(IFormFile file, FileViewModel article)
+        {
+            var userId = userManager.GetUserId(User);
+
+            var articleInDb = await articleRepository.GetArticle(article.Id);
+            if (articleInDb == null) return RedirectToPanel();
+            if (!ModelState.IsValid) return View(article);
+
+            var bucket = $@"/bucket/{userId}/article/";
+            var uploadFilePath = $@"{environment.WebRootPath}{bucket}";
+            var fileName = await fileProductivitySvc.Storage(uploadFilePath, file);
+
+            fileProductivitySvc.Remove(articleInDb.ArticlePath);
+
+            articleInDb.ArticlePath = Path.Combine(bucket, fileName);
+            await context.SaveChangesAsync();
+
+            return RedirectToPanel();
+        }
+        
         // GET: /Article/New
         [Authorize(Roles = Roles.Teacher)]
         public IActionResult New(string returnUrl = null)
@@ -147,104 +119,50 @@ namespace refca.Features.Article
         [HttpPost]
         [Authorize(Roles = Roles.Teacher)]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> New(IFormFile ArticleFile, ArticleViewModel article, string returnUrl = null)
+        public async Task<IActionResult> New(ArticleViewModel article, string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
 
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
 
-            // validating file
-            if (!IsValidFile(ArticleFile))
+            if (!ModelState.IsValid) return View(article);
+            if (!validTeachers(article.TeacherIds)) return View("NotFound");
+
+            var newArticle = mapper.Map<Models.Article>(article);
+            newArticle.Owner = userId;
+            articleRepository.Add(newArticle);
+
+            var selfAuthor = article.TeacherIds.FirstOrDefault(a => a == userId);
+            if (selfAuthor != null) 
+                article.TeacherIds.Remove(userId);
+            
+            var numOrder = 0;            
+            context.TeacherArticles.Add(new TeacherArticle { TeacherId = userId, ArticleId = newArticle.Id, Order = ++numOrder, Role = Roles.Writter});
+            foreach (var teacher in article.TeacherIds)
             {
-                ListItems(article);
-                return View();
+                context.TeacherArticles.Add(new TeacherArticle { TeacherId = teacher, ArticleId = newArticle.Id, Order = ++numOrder, Role = Roles.Reader});
             }
-            article.TeacherIds.Add(userId);
-                        
-            // validate true teachers
-            var existingTeachers = _context.Teachers.Select(i => i.Id).ToList();
-            var authorIds = article.TeacherIds.All(t => existingTeachers.Contains(t));
-            if (authorIds == false)
-                return NotFound();
+            await context.SaveChangesAsync();
 
-            // getting clean authorList
-            var authorList = GetAuthorList(article.TeacherIds);
-
-            if (ArticleFile != null)
-            {
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(ArticleFile.FileName);
-                var bucket = $@"/bucket/{userId}/article/";
-                var userPath = $@"{_environment.WebRootPath}{bucket}";
-                if (!Directory.Exists(userPath))
-                    Directory.CreateDirectory(userPath);
-
-                var physicalPath = Path.Combine(userPath, fileName);
-
-                using (var stream = new FileStream(physicalPath, FileMode.Create))
-                {
-                    await ArticleFile.CopyToAsync(stream);
-                }
-
-                if (ModelState.IsValid)
-                {
-                    var newarticle = new Models.Article
-                    {
-                        Title = article.Title,
-                        Magazine = article.Magazine,
-                        EditionDate = article.EditionDate,
-                        ISSN = article.ISSN,
-                        AddedDate = DateTime.Now,
-                    };
-                    newarticle.ArticlePath = Path.Combine(bucket, fileName);
-                    _context.Articles.Add(newarticle);
-                    await _context.SaveChangesAsync();
-
-                    foreach (var author in authorList)
-                    {
-                        var teacherArticle = new TeacherArticle { TeacherId = author.Id, ArticleId = newarticle.Id, Order = author.Order };
-                        _context.TeacherArticles.Add(teacherArticle);
-                    }
-                    await _context.SaveChangesAsync();
-                }
-                else
-                {
-                    ListItems(article);
-                    return View(article);
-                }
-            }
-            else
-            {
-                ModelState.AddModelError(string.Empty, "El archivo es requerido");
-                ListItems(article);
-                return View(article);
-            }
-            return RedirectToAction(nameof(ArticleController.List));
+            return RedirectToAction(nameof(ArticleController.Upload), new { Id = newArticle.Id });
         }
 
         // GET: /Article/Edit
+        [HttpGet]
         [Authorize(Roles = Roles.AdminAndTeacher)]
         public async Task<IActionResult> Edit(int id)
         {
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
 
-            var articleInDb = await _context.Articles.SingleOrDefaultAsync(t => t.Id == id);
-            if (articleInDb == null)
-                return NotFound();
+            var articleInDb = await context.Articles.FirstOrDefaultAsync(t => t.Id == id);
+            if (articleInDb == null) return View("NotFound");
 
-            var viewModel = new ArticleViewModel
-            {
-                Id = articleInDb.Id,
-                Title = articleInDb.Title,
-                EditionDate = articleInDb.EditionDate,
-                Magazine = articleInDb.Magazine,
-                ISSN = articleInDb.ISSN,
+            var isTeacherArticle = context.TeacherArticles.FirstOrDefault(a => a.ArticleId == articleInDb.Id && a.TeacherId == userId);
+            if (User.IsInRole(Roles.Teacher) && isTeacherArticle == null) return View("AccessDenied");
 
-            };
-            viewModel.Teachers = _context.TeacherArticles.Where(a => a.ArticleId == articleInDb.Id)
+            var viewModel = mapper.Map<ArticleViewModel>(articleInDb);
+
+            viewModel.Teachers = context.TeacherArticles.Where(a => a.ArticleId == articleInDb.Id)
             .OrderBy(o => o.Order).Select(t => t.Teacher).ToList();
 
             return View(viewModel);
@@ -254,221 +172,100 @@ namespace refca.Features.Article
         [HttpPost]
         [Authorize(Roles = Roles.AdminAndTeacher)]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, IFormFile ArticleFile, ArticleViewModel article, string returnUrl = null)
+        public async Task<IActionResult> Edit(int id, ArticleViewModel article, string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
 
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
 
-            var articleInDb = await _context.Articles.Include(tb => tb.TeacherArticles).SingleOrDefaultAsync(t => t.Id == id);
-            if (articleInDb == null)
-                return NotFound();
+            var articleInDb = await articleRepository.GetArticle(id);
+            if (articleInDb == null) return View("NotFound");
 
-            // Validate null teachersIds
-            if(!article.TeacherIds.Any())
-            {
-                _context.Articles.Remove(articleInDb);
-                await _context.SaveChangesAsync();
-                return RedirectToView();
-            }
-
-            // validate true teachers
-            var existingTeachers = _context.Teachers.Select(i => i.Id).ToList();
-            var authorIds = article.TeacherIds.All(t => existingTeachers.Contains(t));
-            if (authorIds == false)
-                return NotFound();
+            var isTeacherArticle = context.TeacherArticles
+                .FirstOrDefault(a => a.ArticleId == articleInDb.Id && a.TeacherId == userId && a.Role == Roles.Writter);
+            if (User.IsInRole(Roles.Teacher) && isTeacherArticle == null) return View("AccessDenied");
             
-            // getting clean authorList
-            var authorList = GetAuthorList(article.TeacherIds);
-
-            var currentPath = articleInDb.ArticlePath;
-            // if current authors do not have the file, move it to first author
-            if (ExistPath(authorList, currentPath))
+            var adminId = article.TeacherIds.SingleOrDefault(i => i == userId);
+            if (!article.TeacherIds.Any() || adminId == null)
             {
-                var authorId = authorList.Select(i => i.Id).FirstOrDefault();
-                currentPath = $@"/bucket/{authorId}/article/";
-                if (ArticleFile == null)
-                {
-                    var fileName = Path.GetFileName(articleInDb.ArticlePath);
-                    var sourcePath = $@"{_environment.WebRootPath}{articleInDb.ArticlePath}";
-                    var destPath = $@"{_environment.WebRootPath}{currentPath}{fileName}";
-                    var physicalPath = $@"{_environment.WebRootPath}{currentPath}";
-
-                    if (!Directory.Exists(physicalPath))
-                        Directory.CreateDirectory(physicalPath);
-
-                    if (!System.IO.File.Exists(destPath))
-                    {
-                        System.IO.File.Move(sourcePath, destPath);
-                        currentPath = Path.Combine(currentPath, fileName);
-                    }
-                }
-            }
-            // adding new file
-            if (ArticleFile != null)
-            {
-                // validating file
-                if (!IsValidFile(ArticleFile))
-                {
-                    ListItems(article);
-                    return View();
-                }
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(ArticleFile.FileName);
-                var bucket = $@"/bucket/{userId}/article/";
-                var userPath = $@"{_environment.WebRootPath}{bucket}";
-                var directory = Path.GetDirectoryName(currentPath);
-                var physicalPath = $@"{_environment.WebRootPath}{directory}";
-
-                if (!Directory.Exists(physicalPath))
-                    Directory.CreateDirectory(physicalPath);
-
-                var fullPath = Path.Combine(physicalPath, fileName);
-                var oldPath = $@"{_environment.WebRootPath}{articleInDb.ArticlePath}";
-
-                System.IO.File.Delete(oldPath);
-
-                using (var stream = new FileStream(fullPath, FileMode.Create))
-                {
-                    await ArticleFile.CopyToAsync(stream);
-                }
-
-                currentPath = $@"{directory}/{fileName}";
-            }
-            // saving changes to article
-            if (ModelState.IsValid)
-            {
-                articleInDb.Title = article.Title;
-                articleInDb.UpdatedDate = DateTime.Now;
-                articleInDb.ArticlePath = currentPath;
-                articleInDb.Magazine = article.Magazine;
-                articleInDb.ISSN = article.ISSN;
-                articleInDb.EditionDate = article.EditionDate;
-                
-                articleInDb.TeacherArticles.Where(t => t.ArticleId == articleInDb.Id)
-                .ToList().ForEach(teacher => articleInDb.TeacherArticles.Remove(teacher));
-                await _context.SaveChangesAsync();
-                foreach (var teacher in authorList)
-                {
-                    var teacherArticles = new TeacherArticle { TeacherId = teacher.Id, ArticleId = articleInDb.Id, Order = teacher.Order };
-                    _context.TeacherArticles.Add(teacherArticles);
-                }
-                await _context.SaveChangesAsync();
-            }
-            else
-            {
-                ListItems(article);
-                return View(article);
+                var filePath = $@"{environment.WebRootPath}{articleInDb.ArticlePath}";
+                fileProductivitySvc.Remove(filePath);
+                articleRepository.Remove(articleInDb);
+                await context.SaveChangesAsync();
+                return RedirectToPanel();
             }
 
-            return RedirectToView();
+            if (!validTeachers(article.TeacherIds)) return View("AccessDenied");
+            if (!ModelState.IsValid) return View(article);
+
+            mapper.Map<ArticleViewModel, Models.Article>(article, articleInDb);
+            articleInDb.UpdatedDate = DateTime.Now;
+            
+            article.TeacherIds.Remove(userId);
+            
+            articleInDb.TeacherArticles.Where(t => t.ArticleId == articleInDb.Id && t.TeacherId != userId)
+            .ToList().ForEach(teacher => articleInDb.TeacherArticles.Remove(teacher));
+            await context.SaveChangesAsync();
+
+            var numOrder = 1;
+            foreach (var teacher in article.TeacherIds)
+            {
+                var teacherArticles = new TeacherArticle 
+                { TeacherId = teacher, ArticleId = articleInDb.Id, Order = ++numOrder, Role = Roles.Reader};
+                context.TeacherArticles.Add(teacherArticles);
+            }
+
+            await context.SaveChangesAsync();
+
+            return RedirectToPanel();
         }
 
         // POST: /Article/Delete
         [HttpPost]
         [Authorize(Roles = Roles.AdminAndTeacher)]
-        [ValidateAntiForgeryToken]
         public IActionResult Delete(int id)
         {
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
+            if (userId == null) return View("Error");
 
+            var articleInDb = context.Articles.FirstOrDefault(t => t.Id == id);
+            if (articleInDb == null) return View("NotFound");
 
-            var articleInDb = _context.Articles.SingleOrDefault(t => t.Id == id);
-            if (articleInDb == null)
-                return NotFound();
+            var IsTeacherArticle = context.TeacherArticles.FirstOrDefault(a => a.ArticleId == articleInDb.Id && a.TeacherId == userId);
+            if (User.IsInRole(Roles.Teacher) && IsTeacherArticle == null) return View("NotFound");
 
-            var oldPath = $@"{_environment.WebRootPath}{articleInDb.ArticlePath}";
+            var filePath = $@"{environment.WebRootPath}{articleInDb.ArticlePath}";
 
-            if (System.IO.File.Exists(oldPath))
-            {
-                System.IO.File.Delete(oldPath);
-            }
-            _context.Articles.Remove(articleInDb);
-            _context.SaveChanges();
+            fileProductivitySvc.Remove(filePath);
+            context.Articles.Remove(articleInDb);
+            context.SaveChanges();
 
-            return RedirectToView();
+            return RedirectToPanel();
         }
 
         #region helpers
-        private void ListItems(ArticleViewModel article)
-        {
-            article.Teachers = _context.TeacherArticles.Where(a => a.ArticleId == article.Id).Select(t => t.Teacher).ToList();
-        }
 
-        private IActionResult RedirectToView()
+        private IActionResult RedirectToPanel()
         {
             if (User.IsInRole(Roles.Admin))
-                return RedirectToAction(nameof(ArticleController.ListAll));
+                return RedirectToAction(nameof(ArticleController.Manage));
 
             return RedirectToAction(nameof(ArticleController.List));
         }
-        public bool IsValidFile(IFormFile file)
-        {
-            // validate maximum file length
-            if (file.Length > 31457280)
-            {
-                ModelState.AddModelError(string.Empty, "No se permiten archvios mayores de 30MB");
-                return false;
-            }
-            // validate no empty files
-            if (file.Length == 0)
-            {
-                ModelState.AddModelError(string.Empty, "No se permiten archvios vacios");
-                return false;
-            }
-            // validate file type 
-            if (!file.FileName.EndsWith(".pdf"))
-            {
-                ModelState.AddModelError(string.Empty, "Solo se permiten archivos con extension .pdf");
-                return false;
-            }
-            return true;
-        }
-        public bool ExistPath(List<Author> authorIds, string currentPath)
-        {
-            var fileName = Path.GetFileName(currentPath);
-            foreach (var author in authorIds)
-            {
-                var bucket = $@"/bucket/{author.Id}/article/{fileName}";
-                if (bucket == currentPath)
-                    return false;
-            }
-            return true;
-        }
-        public static List<Author> GetAuthorList(List<string> authorIds)
-        {
-            var order = 1;
-            var authorList = new List<Author>();
-            var cleanAuthorIds = authorIds.Distinct().ToList();
-            foreach (var author in cleanAuthorIds)
-            {
-                var newAuthor = new Author { Id = author, Order = order++ };
-                authorList.Add(newAuthor);
-            }
-            return authorList;
-        }
-        private void AddErrors(IdentityResult result)
-        {
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-        }
 
+        private bool validTeachers(List<string> teacherIds)
+        {
+            var existingTeachers = context.Teachers.Select(i => i.Id).ToList();
+            var teachers = teacherIds.All(t => existingTeachers.Contains(t));
+
+            return teachers;
+        }
         private IActionResult RedirectToLocal(string returnUrl)
         {
             if (Url.IsLocalUrl(returnUrl))
-            {
                 return Redirect(returnUrl);
-            }
             else
-            {
                 return RedirectToAction(nameof(HomeController.Index), "Home");
-            }
-
         }
         #endregion
     }

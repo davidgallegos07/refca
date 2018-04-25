@@ -6,32 +6,40 @@ using Microsoft.AspNetCore.Mvc;
 using refca.Data;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
-using refca.Dtos;
+using refca.Resources;
+using refca.Repositories;
+using refca.Resources.QueryResources;
+using refca.Models.QueryFilters;
+using refca.Models;
+using Microsoft.AspNetCore.Authorization;
+using refca.Models.Identity;
+using refca.Resources.TeacherQueryResources;
 
 namespace refca.Api
 {
     [Route("api/[controller]")]
     public class BooksController : Controller
     {
-        private ApplicationDbContext _context;
+        private RefcaDbContext _context;
+        private readonly IMapper mapper;
+        private readonly IBookRepository _bookRepository;
 
-        public BooksController(ApplicationDbContext context)
+        public BooksController(RefcaDbContext context, IMapper mapper, IBookRepository bookRepository)
         {
+            this._bookRepository = bookRepository;
+            this.mapper = mapper;
             _context = context;
         }
 
-        // GET: api/books
+        // GET: api/books?{query}
         [HttpGet]
-        public IEnumerable<BookWithTeachersDto> Get()
+        public async Task<QueryResultResource<BookResource>> GetBooks(TeacherBookQueryResource filterResource)
         {
-            var books = _context.Books
-                .Include(tp => tp.TeacherBooks)
-                    .ThenInclude(t => t.Teacher)
-                .Where(p => p.IsApproved == true)
-                .OrderBy(d => d.AddedDate)
-                .ToList();
-                books.ForEach(book => book.TeacherBooks = book.TeacherBooks.OrderBy(o => o.Order).ToList());
-            return Mapper.Map<IEnumerable<BookWithTeachersDto>>(books);
+
+            var filter = mapper.Map<TeacherBookQueryResource, BookQuery>(filterResource);
+            var queryResult = await _bookRepository.GetBooks(filter);
+
+            return mapper.Map<QueryResult<Book>, QueryResultResource<BookResource>>(queryResult);
         }
 
         // GET: api/books/count
@@ -44,19 +52,20 @@ namespace refca.Api
 
         // GET api/books/{id}
         [HttpGet("{id}")]
-        public async Task<IActionResult> Get(int id)
+        public async Task<IActionResult> GetBook(int id)
         {
             var book = await _context.Books
                 .Include(tp => tp.TeacherBooks)
                     .ThenInclude(t => t.Teacher)
                 .Where(p => p.IsApproved == true)
                 .SingleOrDefaultAsync(t => t.Id == id);
-                book.TeacherBooks = book.TeacherBooks.OrderBy(o => o.Order).ToList();
 
             if (book == null)
                 return NotFound();
 
-            return Ok(Mapper.Map<BookWithTeachersDto>(book));
+            book.TeacherBooks = book.TeacherBooks.OrderBy(o => o.Order).ToList();
+
+            return Ok(mapper.Map<BookResource>(book));
         }
     }
 }

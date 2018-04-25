@@ -6,35 +6,40 @@ using Microsoft.AspNetCore.Mvc;
 using refca.Data;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
-using refca.Dtos;
+using refca.Resources;
+using refca.Repositories;
+using refca.Resources.QueryResources;
+using refca.Models.QueryFilters;
+using refca.Models;
+using Microsoft.AspNetCore.Authorization;
+using refca.Models.Identity;
+using refca.Resources.TeacherQueryResources;
 
 namespace refca.Api
 {
     [Route("api/[controller]")]
     public class PresentationsController : Controller
     {
-        private ApplicationDbContext _context;
-
-        public PresentationsController(ApplicationDbContext context)
+        private RefcaDbContext _context;
+        private readonly IMapper mapper;
+        private readonly IPresentationRepository _presentationRepository;
+        public PresentationsController(RefcaDbContext context, IMapper mapper, IPresentationRepository presentationRepository)
         {
+            this.mapper = mapper;
             _context = context;
+            _presentationRepository = presentationRepository;
         }
 
-        // GET: api/presentations
+        // GET: api/presentations?{query}
         [HttpGet]
-        public IEnumerable<PresentationWithTeachersDto> Get()
+        public async Task<QueryResultResource<PresentationResource>> GetPresentations(TeacherPresentationQueryResource filterResource)
         {
-            var presentations =  _context.Presentations
-               .Include(tp => tp.TeacherPresentations)
-                   .ThenInclude(t => t.Teacher)
-               .Where(p => p.IsApproved == true)
-               .OrderBy(d => d.AddedDate)
-               .ToList();
-                presentations.ForEach(presentation => presentation.TeacherPresentations = presentation.TeacherPresentations.OrderBy(o => o.Order).ToList());
+            var filter = mapper.Map<TeacherPresentationQueryResource, PresentationQuery>(filterResource);
+            var queryResult = await _presentationRepository.GetPresentations(filter);
 
-            return Mapper.Map<IEnumerable<PresentationWithTeachersDto>>(presentations);
+            return mapper.Map<QueryResult<Presentation>, QueryResultResource<PresentationResource>>(queryResult);
         }
-
+        
         // GET: api/presentations/count
         [HttpGet("Count")]
         public async Task<IActionResult> GetNumberOfPresentations()
@@ -52,12 +57,13 @@ namespace refca.Api
                     .ThenInclude(t => t.Teacher)
                  .Where(p => p.IsApproved == true)
                  .SingleOrDefaultAsync(t => t.Id == id);
-                 presentation.TeacherPresentations = presentation.TeacherPresentations.OrderBy(o => o.Order).ToList();
 
             if (presentation == null)
                 return NotFound();
 
-            return Ok(Mapper.Map<PresentationWithTeachersDto>(presentation));
+            presentation.TeacherPresentations = presentation.TeacherPresentations.OrderBy(o => o.Order).ToList();
+
+            return Ok(mapper.Map<PresentationResource>(presentation));
         }
     }
 }

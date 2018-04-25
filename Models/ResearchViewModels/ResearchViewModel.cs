@@ -32,13 +32,13 @@ namespace refca.Models.ResearchViewModels
         public string Sector { get; set; }
 
         [Required(ErrorMessage = "Duración del proyecto")]
-        [Range(1, byte.MaxValue, ErrorMessage = "Ingresa un numero entero valido")]
+        [Range(1, byte.MaxValue, ErrorMessage = "Ingresa un número entero valido")]
         [Display(Name = "Duración del proyecto")]
         public byte ResearchDuration { get; set; }
         
         [Required(ErrorMessage = "El periodo inicial es requerido")]
         [StringLength(100, ErrorMessage = "Mínimo {2} caracteres,  Máximo {1} caracteres", MinimumLength = 3)]
-        [Display(Name = "Periodo Inicial")]
+        [Display(Name = "Periodo inicial")]
         public string InitialPeriod { get; set; }
 
         [Required(ErrorMessage = "El periodo final es requerido")]

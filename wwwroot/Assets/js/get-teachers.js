@@ -1,16 +1,32 @@
 ﻿$(document).ready(function () {
-
-    var vm = {
-        teacherIds: []
-    };
-
+    var teacherIds = [];
+    // get Teachers from model
     $("#teachers").ready(function () {
-        $(".list-group-item").each(function () {          
+        $(".list-group-item").each(function () {
             var id = $(this).attr('id');
-            vm.teacherIds.push(id);
+            teacherIds.push(id);
         });
     });
- 
+
+    // check user
+    function checkUser(teacherId) {
+        for (var id in teacherIds) {
+            if (teacherId === teacherIds[id]) {
+                return true;
+            }
+        }
+        return false;
+    }
+    // find user
+    function findUser(teacherId) {
+        for (var id in teacherIds) {
+            if (teacherId === teacherIds[id]) {
+                return id;
+            }
+        }
+        return null;
+    }
+    // datepicker
     $('.input-group.date').datepicker({
         format: 'yyyy-mm-dd',
         endDate: '1d',
@@ -39,27 +55,14 @@
             name: 'teachers',
             display: 'name',
             source: teachers
-        
+
         }).on("typeahead:select", function (e, teacher) {
 
-            if (vm.teacherIds.length === 0) {
-                vm.teacherIds.push(teacher.id);
-                $("#teachers").append("<div> <div class='list-group-item' id=" + teacher.id + "> " + teacher.name + " </div> <input name='TeacherIds' hidden value=" + teacher.id + "></input> </div > ");
-                $("#teacher").typeahead("val", "");
-            }
-            function checkUser() {
-                for (var id in vm.teacherIds) {
-                    if (teacher.id === vm.teacherIds[id])
-                        return false;
-                }
-                return true;
-            }
-            if (checkUser()) {
-                vm.teacherIds.push(teacher.id);
+            if (!checkUser(teacher.id)) {
+                teacherIds.push(teacher.id);
                 $("#teachers").append("<div> <div class='list-group-item' id=" + teacher.id + ">" + teacher.name + "</div> <input name='TeacherIds' hidden value=" + teacher.id + "></input> </div > ");
-                $("#teacher").typeahead("val", "");
-
             }
+
         });
 
     $("#teachers").on('click', '.list-group-item', function () {
@@ -80,17 +83,14 @@
                     label: 'Si',
                     className: 'btn-success',
                     callback: function () {
-                        var l = vm.teacherIds.length;
-                        $(box).parent('div').remove();
-                        for (var i = 0; i < l; i++) {
-                            if (id === vm.teacherIds[i])
-                                vm.teacherIds.splice(i, 1);
+                        var teacherIdx = findUser(id);
+                        if (teacherIdx != null) {
+                            teacherIds.splice(teacherIdx, 1);
                         }
+                        $(box).parent('div').remove();
                     }
-
                 }
             }
         });
-        
     });
 });

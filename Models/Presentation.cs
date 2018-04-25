@@ -15,6 +15,7 @@ namespace refca.Models
         public DateTime AddedDate { get; set; }
         public bool IsApproved { get; set; }
         public string PresentationPath { get; set; }
+        public string Owner { get; set; }
 
         public ICollection<TeacherPresentation> TeacherPresentations { get; set; }
     }

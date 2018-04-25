@@ -10,6 +10,7 @@ namespace refca.Models
         public string TeacherId { get; set; }
         public int MagazineId { get; set; }
         public int Order { get; set; }
+        public string Role { get; set; }
         public Teacher Teacher { get; set; }
         public Magazine Magazine { get; set; }
     }
