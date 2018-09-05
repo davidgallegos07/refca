@@ -20,8 +20,8 @@
 -- '2017-08-28');
 --       SET @Ident += 1;
 -- END
-UPDATE TeacherArticles SET TeacherArticles.[Order] = 1 WHERE ArticleId = 777750 AND TeacherId = 'd52266ca-809e-450d-a860-8af3ca83eca4'
+UPDATE TeacherArticles SET TeacherArticles.[Order] = 1 WHERE ArticleId = 777756 AND TeacherId = 'd52266ca-809e-450d-a860-8af3ca83eca4'
 
-SELECT * FROM Articles WHERE Id = 777750
+SELECT * FROM Articles WHERE Id = 777763
 SELECT * FROM  TeacherArticles where ArticleId = 777750 
 --AND TeacherId = 'd52266ca-809e-450d-a860-8af3ca83eca4'

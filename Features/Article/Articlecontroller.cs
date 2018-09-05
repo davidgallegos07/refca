@@ -79,7 +79,7 @@ namespace refca.Features.Article
             var articleInDb = await articleRepository.GetArticle(id);
             if (articleInDb == null) return RedirectToPanel();
 
-            return View(new FileViewModel { Id = id });
+            return View(new FileViewModel { Id = id, ControllerName = "Article" });
         }
         
         // POST: /Article/Upload
@@ -92,7 +92,7 @@ namespace refca.Features.Article
 
             var articleInDb = await articleRepository.GetArticle(article.Id);
             if (articleInDb == null) return RedirectToPanel();
-            if (!ModelState.IsValid) return View(article);
+            if (!ModelState.IsValid) return View(new FileViewModel { Id = article.Id, ControllerName = "Article" });
 
             var bucket = $@"/bucket/{userId}/article/";
             var uploadFilePath = $@"{environment.WebRootPath}{bucket}";
@@ -129,15 +129,14 @@ namespace refca.Features.Article
             if (!validTeachers(article.TeacherIds)) return View("NotFound");
 
             var newArticle = mapper.Map<Models.Article>(article);
-            newArticle.Owner = userId;
+            newArticle.AddedDate = DateTime.Now;
             articleRepository.Add(newArticle);
 
-            var selfAuthor = article.TeacherIds.FirstOrDefault(a => a == userId);
-            if (selfAuthor != null) 
-                article.TeacherIds.Remove(userId);
+            var writterId = article.TeacherIds.SingleOrDefault(i => i == userId);
+            if (writterId != null) article.TeacherIds.Remove(userId);
             
             var numOrder = 0;            
-            context.TeacherArticles.Add(new TeacherArticle { TeacherId = userId, ArticleId = newArticle.Id, Order = ++numOrder, Role = Roles.Writter});
+            context.TeacherArticles.Add(new TeacherArticle { TeacherId = userId, ArticleId = newArticle.Id, Order = ++numOrder, Role = Roles.Writter });
             foreach (var teacher in article.TeacherIds)
             {
                 context.TeacherArticles.Add(new TeacherArticle { TeacherId = teacher, ArticleId = newArticle.Id, Order = ++numOrder, Role = Roles.Reader});
@@ -157,8 +156,8 @@ namespace refca.Features.Article
             var articleInDb = await context.Articles.FirstOrDefaultAsync(t => t.Id == id);
             if (articleInDb == null) return View("NotFound");
 
-            var isTeacherArticle = context.TeacherArticles.FirstOrDefault(a => a.ArticleId == articleInDb.Id && a.TeacherId == userId);
-            if (User.IsInRole(Roles.Teacher) && isTeacherArticle == null) return View("AccessDenied");
+            var writter = context.TeacherArticles.FirstOrDefault(a => a.ArticleId == articleInDb.Id && a.TeacherId == userId);
+            if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
 
             var viewModel = mapper.Map<ArticleViewModel>(articleInDb);
 
@@ -177,16 +176,16 @@ namespace refca.Features.Article
             ViewData["ReturnUrl"] = returnUrl;
 
             var userId = userManager.GetUserId(User);
-
             var articleInDb = await articleRepository.GetArticle(id);
-            if (articleInDb == null) return View("NotFound");
-
-            var isTeacherArticle = context.TeacherArticles
-                .FirstOrDefault(a => a.ArticleId == articleInDb.Id && a.TeacherId == userId && a.Role == Roles.Writter);
-            if (User.IsInRole(Roles.Teacher) && isTeacherArticle == null) return View("AccessDenied");
+            var writter =  context.TeacherArticles.FirstOrDefault(a => a.ArticleId == articleInDb.Id && a.Role == Roles.Writter);
             
-            var adminId = article.TeacherIds.SingleOrDefault(i => i == userId);
-            if (!article.TeacherIds.Any() || adminId == null)
+            if (articleInDb == null) return View("NotFound");
+            if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
+            if (!validTeachers(article.TeacherIds)) return View("AccessDenied");
+            if (!ModelState.IsValid) return View(article);
+            
+            var writterId = article.TeacherIds.SingleOrDefault(i => i == writter.TeacherId);
+            if (writterId == null)
             {
                 var filePath = $@"{environment.WebRootPath}{articleInDb.ArticlePath}";
                 fileProductivitySvc.Remove(filePath);
@@ -195,24 +194,19 @@ namespace refca.Features.Article
                 return RedirectToPanel();
             }
 
-            if (!validTeachers(article.TeacherIds)) return View("AccessDenied");
-            if (!ModelState.IsValid) return View(article);
-
-            mapper.Map<ArticleViewModel, Models.Article>(article, articleInDb);
             articleInDb.UpdatedDate = DateTime.Now;
+            mapper.Map<ArticleViewModel, Models.Article>(article, articleInDb);
             
-            article.TeacherIds.Remove(userId);
+            article.TeacherIds.Remove(writterId);
             
-            articleInDb.TeacherArticles.Where(t => t.ArticleId == articleInDb.Id && t.TeacherId != userId)
+            articleInDb.TeacherArticles.Where(t => t.ArticleId == articleInDb.Id && t.TeacherId != writterId)
             .ToList().ForEach(teacher => articleInDb.TeacherArticles.Remove(teacher));
             await context.SaveChangesAsync();
 
             var numOrder = 1;
-            foreach (var teacher in article.TeacherIds)
+            foreach (var teacherId in article.TeacherIds)
             {
-                var teacherArticles = new TeacherArticle 
-                { TeacherId = teacher, ArticleId = articleInDb.Id, Order = ++numOrder, Role = Roles.Reader};
-                context.TeacherArticles.Add(teacherArticles);
+                context.TeacherArticles.Add(new TeacherArticle { TeacherId = teacherId, ArticleId = articleInDb.Id, Order = ++numOrder, Role = Roles.Reader });
             }
 
             await context.SaveChangesAsync();
@@ -226,16 +220,13 @@ namespace refca.Features.Article
         public IActionResult Delete(int id)
         {
             var userId = userManager.GetUserId(User);
-            if (userId == null) return View("Error");
-
             var articleInDb = context.Articles.FirstOrDefault(t => t.Id == id);
+            var writter =  context.TeacherArticles.FirstOrDefault(a => a.ArticleId == articleInDb.Id && a.Role == Roles.Writter);
+            
             if (articleInDb == null) return View("NotFound");
+            if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
 
-            var IsTeacherArticle = context.TeacherArticles.FirstOrDefault(a => a.ArticleId == articleInDb.Id && a.TeacherId == userId);
-            if (User.IsInRole(Roles.Teacher) && IsTeacherArticle == null) return View("NotFound");
-
-            var filePath = $@"{environment.WebRootPath}{articleInDb.ArticlePath}";
-
+            var filePath = $@"{environment.WebRootPath}{articleInDb.ArticlePath}";         
             fileProductivitySvc.Remove(filePath);
             context.Articles.Remove(articleInDb);
             context.SaveChanges();
@@ -247,8 +238,7 @@ namespace refca.Features.Article
 
         private IActionResult RedirectToPanel()
         {
-            if (User.IsInRole(Roles.Admin))
-                return RedirectToAction(nameof(ArticleController.Manage));
+            if (User.IsInRole(Roles.Admin)) return RedirectToAction(nameof(ArticleController.Manage));
 
             return RedirectToAction(nameof(ArticleController.List));
         }
@@ -262,7 +252,7 @@ namespace refca.Features.Article
         }
         private IActionResult RedirectToLocal(string returnUrl)
         {
-            if (Url.IsLocalUrl(returnUrl))
+            if (Url.IsLocalUrl(returnUrl)) 
                 return Redirect(returnUrl);
             else
                 return RedirectToAction(nameof(HomeController.Index), "Home");

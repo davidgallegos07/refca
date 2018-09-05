@@ -8,6 +8,7 @@ using refca.Resources.QueryResources;
 using refca.Resources.TeacherQueryResources;
 using refca.Models.ArticleViewModels;
 using refca.Models.BookViewModels;
+using System;
 
 namespace refca.Mapping
 {
@@ -15,7 +16,8 @@ namespace refca.Mapping
     {
         public MappingProfile()
         {
-            CreateMap<Article, ArticleViewModel>().ReverseMap();
+            
+            CreateMap<ArticleViewModel, Article>().ReverseMap();
             CreateMap<Book, BookViewModel>().ReverseMap();
                             
             CreateMap<Teacher, TeacherResource>();

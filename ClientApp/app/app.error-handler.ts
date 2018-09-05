@@ -5,6 +5,6 @@ export class AppErrorHandler implements ErrorHandler {
     constructor() { }
     handleError(error: any): void {
         console.log('global error cached');
-        //this._router.navigate(['/home']);			
+        console.log(error);
     }
 }
