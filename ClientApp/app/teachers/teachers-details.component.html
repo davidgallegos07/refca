@@ -22,14 +22,17 @@
                 <li class="list-group-item text-right"><span class="pull-left">Email</span>{{teacher?.email}}</li>
                 <li class="list-group-item text-right">
                     <span class="pull-left">Contacto</span>
-                    <a target="_blank" *ngIf="teacher?.facebookProfile != null" href="{{teacher?.facebookProfile}}" title="Facebook"><i class="fa fa-facebook" style="margin-left:10px"></i></a>
-                    <a target="_blank" *ngIf="teacher?.twitterProfile != null" href="{{teacher?.twitterProfile}}" title="Twitter"><i class="fa fa-twitter" style="margin-left:10px"></i></a>
-                    <a target="_blank" *ngIf="teacher?.webSite != null" href="{{teacher?.webSite}}" title="Website"><i class="fa fa-globe" style="margin-left:10px"></i></a>
+                    <a target="_blank" *ngIf="teacher?.facebookProfile != null" href="{{teacher?.facebookProfile}}" title="Facebook"><i
+                            class="fa fa-facebook" style="margin-left:10px"></i></a>
+                    <a target="_blank" *ngIf="teacher?.twitterProfile != null" href="{{teacher?.twitterProfile}}" title="Twitter"><i
+                            class="fa fa-twitter" style="margin-left:10px"></i></a>
+                    <a target="_blank" *ngIf="teacher?.webSite != null" href="{{teacher?.webSite}}" title="Website"><i class="fa fa-globe"
+                            style="margin-left:10px"></i></a>
                     <span class="white-text">|</span>
                 </li>
-                 <li class="list-group-item text-right">
+                <li class="list-group-item text-right">
                     <span class="pull-left">Curriculum</span>
-                    <a target="_blank" href="{{teacher?.curriculumPath}}"><i class="fa fa-download"></i> Descargar</a>
+                    <a target="_blank" href="{{teacher?.cvPath}}"><i class="fa fa-download"></i> Descargar</a>
                 </li>
             </ul>
             <ul class="list-group">

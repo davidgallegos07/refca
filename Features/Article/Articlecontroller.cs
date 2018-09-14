@@ -81,7 +81,7 @@ namespace refca.Features.Article
 
             return View(new FileViewModel { Id = id, ControllerName = "Article" });
         }
-        
+
         // POST: /Article/Upload
         [HttpPost]
         [Authorize(Roles = Roles.Teacher)]
@@ -105,7 +105,7 @@ namespace refca.Features.Article
 
             return RedirectToPanel();
         }
-        
+
         // GET: /Article/New
         [Authorize(Roles = Roles.Teacher)]
         public IActionResult New(string returnUrl = null)
@@ -134,12 +134,12 @@ namespace refca.Features.Article
 
             var writterId = article.TeacherIds.SingleOrDefault(i => i == userId);
             if (writterId != null) article.TeacherIds.Remove(userId);
-            
-            var numOrder = 0;            
+
+            var numOrder = 0;
             context.TeacherArticles.Add(new TeacherArticle { TeacherId = userId, ArticleId = newArticle.Id, Order = ++numOrder, Role = Roles.Writter });
             foreach (var teacher in article.TeacherIds)
             {
-                context.TeacherArticles.Add(new TeacherArticle { TeacherId = teacher, ArticleId = newArticle.Id, Order = ++numOrder, Role = Roles.Reader});
+                context.TeacherArticles.Add(new TeacherArticle { TeacherId = teacher, ArticleId = newArticle.Id, Order = ++numOrder, Role = Roles.Reader });
             }
             await context.SaveChangesAsync();
 
@@ -177,13 +177,13 @@ namespace refca.Features.Article
 
             var userId = userManager.GetUserId(User);
             var articleInDb = await articleRepository.GetArticle(id);
-            var writter =  context.TeacherArticles.FirstOrDefault(a => a.ArticleId == articleInDb.Id && a.Role == Roles.Writter);
-            
+            var writter = context.TeacherArticles.FirstOrDefault(a => a.ArticleId == articleInDb.Id && a.Role == Roles.Writter);
+
             if (articleInDb == null) return View("NotFound");
             if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
             if (!validTeachers(article.TeacherIds)) return View("AccessDenied");
             if (!ModelState.IsValid) return View(article);
-            
+
             var writterId = article.TeacherIds.SingleOrDefault(i => i == writter.TeacherId);
             if (writterId == null)
             {
@@ -196,9 +196,9 @@ namespace refca.Features.Article
 
             articleInDb.UpdatedDate = DateTime.Now;
             mapper.Map<ArticleViewModel, Models.Article>(article, articleInDb);
-            
+
             article.TeacherIds.Remove(writterId);
-            
+
             articleInDb.TeacherArticles.Where(t => t.ArticleId == articleInDb.Id && t.TeacherId != writterId)
             .ToList().ForEach(teacher => articleInDb.TeacherArticles.Remove(teacher));
             await context.SaveChangesAsync();
@@ -221,12 +221,12 @@ namespace refca.Features.Article
         {
             var userId = userManager.GetUserId(User);
             var articleInDb = context.Articles.FirstOrDefault(t => t.Id == id);
-            var writter =  context.TeacherArticles.FirstOrDefault(a => a.ArticleId == articleInDb.Id && a.Role == Roles.Writter);
-            
+            var writter = context.TeacherArticles.FirstOrDefault(a => a.ArticleId == articleInDb.Id && a.Role == Roles.Writter);
+
             if (articleInDb == null) return View("NotFound");
             if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
 
-            var filePath = $@"{environment.WebRootPath}{articleInDb.ArticlePath}";         
+            var filePath = $@"{environment.WebRootPath}{articleInDb.ArticlePath}";
             fileProductivitySvc.Remove(filePath);
             context.Articles.Remove(articleInDb);
             context.SaveChanges();
@@ -235,7 +235,6 @@ namespace refca.Features.Article
         }
 
         #region helpers
-
         private IActionResult RedirectToPanel()
         {
             if (User.IsInRole(Roles.Admin)) return RedirectToAction(nameof(ArticleController.Manage));
@@ -252,7 +251,7 @@ namespace refca.Features.Article
         }
         private IActionResult RedirectToLocal(string returnUrl)
         {
-            if (Url.IsLocalUrl(returnUrl)) 
+            if (Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
             else
                 return RedirectToAction(nameof(HomeController.Index), "Home");

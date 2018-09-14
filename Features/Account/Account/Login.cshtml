@@ -11,26 +11,31 @@
 <div class="container">
     <div class="row">
         <div class="col-md-4 col-md-offset-4">
-            <div class="login-panel panel panel-default">
+            <div class="login-panel panel panel-success">
                 <div class="panel-heading">
-                    <h5>Login</h5>
+                    <h5>REFCA</h5>
+                </div>
+                <div class="media">
+                   <img src="~/Assets/img/cima.png"  height="150px" width="150px" class="center">
                 </div>
                 <div class="panel-body">
                     <form asp-controller="Account" asp-action="Login" asp-route-returnurl="@ViewData[" ReturnUrl"]" method="post" class="form-horizontal">
-                        <div asp-validation-summary="All" class="text-danger"></div>
+                        <div asp-validation-summary="All" class="alert alert-danger"></div>
+                        
                         <div class="form-group">
-                            <div class="col-md-12">
+                             <div style="margin-bottom: 25px" class="input-group">
+                             <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
                                 <input asp-for="Email" class="form-control" placeholder="Email" />
-                                <span asp-validation-for="Email" class="text-danger"></span>
+                             </div>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="col-md-12">
+                             <div class="form-group">
+                            <div style="margin-bottom: 25px" class="input-group">
+                            <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
                                 <input asp-for="Password" class="form-control" placeholder="Contraseña" />
-                                <span asp-validation-for="Password" class="text-danger"></span>
                             </div>
-                        </div>
-                        <div class="form-group">
+                            </div>
+
+                               <div class="form-group">
                             <div class="col-md-10">
                                 <div class="checkbox">
                                     <label asp-for="RememberMe">
@@ -39,11 +44,15 @@
                                     </label>
                                 </div>
                             </div>
-                        </div>
+                            </div>
+                            
                         <div class="form-group">
                             <div class="col-md-10">
-                                <button type="submit" class="btn btn-default">Log in</button>
+                                <button type="submit" class="btn btn-success">Log in</button>
                             </div>
+                        </div>
+                        <hr>
+
                         </div>
                     </form>
                 </div>
@@ -54,4 +63,6 @@
 
 @section Scripts {
     @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+<link href="~/Assets/css/login.css" rel="stylesheet" type="text/css"/>
 }
+

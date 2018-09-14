@@ -24,8 +24,8 @@ namespace refca.Api.Teacher
         private readonly IMapper mapper;
         private readonly IPresentationRepository _presentationRepository;
         private readonly UserManager<ApplicationUser> _userManager;
-        
-        public PresentationsController(RefcaDbContext context, IMapper mapper, 
+
+        public PresentationsController(RefcaDbContext context, IMapper mapper,
         IPresentationRepository presentationRepository, UserManager<ApplicationUser> userManager)
         {
             this.mapper = mapper;
@@ -35,15 +35,25 @@ namespace refca.Api.Teacher
         }
 
         // GET: api/presentations?{query}
-        [Authorize(Roles = Roles.Teacher)]                
+        [Authorize(Roles = Roles.Teacher)]
         [HttpGet]
         public async Task<QueryResultResource<PresentationResource>> GetPresentations(PresentationQueryResource filterResource)
         {
             var filter = mapper.Map<PresentationQueryResource, PresentationQuery>(filterResource);
-            var userId =  _userManager.GetUserId(HttpContext.User);
+            var userId = _userManager.GetUserId(HttpContext.User);
             var queryResult = await _presentationRepository.GetTeacherPresentations(userId, filter);
 
             return mapper.Map<QueryResult<Presentation>, QueryResultResource<PresentationResource>>(queryResult);
+        }
+
+        // GET api/teacher/presentations/{id}/role
+        [Authorize(Roles = Roles.Teacher)]
+        [HttpGet("{id}/Role")]
+        public IActionResult GetPresentationRoleTeacher(int id)
+        {
+            var userId = _userManager.GetUserId(User);
+            return Ok(_context.TeacherPresentations.Where(t => t.PresentationId == id && t.TeacherId == userId)
+                    .Select(r => r.Role));
         }
     }
 }

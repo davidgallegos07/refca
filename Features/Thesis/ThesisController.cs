@@ -18,29 +18,36 @@ using refca.Models.Identity;
 using AutoMapper;
 using System.Collections.Generic;
 using refca.Resources;
+using refca.Models.FileViewModel;
+using refca.Repositories;
+using refca.Core;
 
 namespace refca.Features.Thesis
 {
     [Authorize]
     public class ThesisController : Controller
     {
-        private RefcaDbContext _context;
-        private IHostingEnvironment _environment;
-        private UserManager<ApplicationUser> _userManager;
+        private RefcaDbContext context;
+        private IHostingEnvironment environment;
+        private UserManager<ApplicationUser> userManager;
         private readonly IMapper mapper;
-
+        private IThesisRepository thesisRepository;
+        private readonly IFileProductivityService fileProductivitySvc;
         public ThesisController(RefcaDbContext context, UserManager<ApplicationUser> userManager,
-            IHostingEnvironment environment, IMapper mapper)
+            IHostingEnvironment environment, IMapper mapper, IThesisRepository thesisRepository, IFileProductivityService fileProductivitySvc)
         {
             this.mapper = mapper;
-            _context = context;
-            _userManager = userManager;
-            _environment = environment;
+            this.context = context;
+            this.userManager = userManager;
+            this.environment = environment;
+            this.thesisRepository = thesisRepository;
+            this.fileProductivitySvc = fileProductivitySvc;
+
         }
 
         // GET: /Thesis/Manage
         [Authorize(Roles = Roles.Admin)]
-        public IActionResult Manage(string returnUrl = null)
+        public IActionResult Manage()
         {
             return View();
         }
@@ -50,53 +57,61 @@ namespace refca.Features.Thesis
         public async Task<IActionResult> IsApproved(int id, string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
 
-            var thesisInDb = await _context.Thesis.SingleOrDefaultAsync(t => t.Id == id);
-            if (thesisInDb == null)
-                return View("NotFound");
+            var thesisInDb = await context.Thesis.SingleOrDefaultAsync(t => t.Id == id);
+            if (thesisInDb == null) return View("NotFound");
 
-            if (ModelState.IsValid)
-            {
-                if (thesisInDb.IsApproved == true)
-                {
-                    thesisInDb.IsApproved = false;
-                }
-                else
-                {
-                    thesisInDb.IsApproved = true;
-                }
-
-                await _context.SaveChangesAsync();
-            }
+            thesisInDb.IsApproved = thesisInDb.IsApproved == true ? thesisInDb.IsApproved = false : thesisInDb.IsApproved = true;
+            await context.SaveChangesAsync();
 
             return RedirectToAction(nameof(ThesisController.Manage));
         }
 
+
+
         // GET: /Thesis/List 
         [HttpGet]
         [Authorize(Roles = Roles.Teacher)]
-        public async Task<IActionResult> List(string returnUrl = null)
+        public IActionResult List()
         {
-            ViewData["ReturnUrl"] = returnUrl;
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
 
-            var theses = await _context.Thesis
-                .Where(m => m.TeacherTheses.Any(t => t.TeacherId == userId))
-                .Include(tt => tt.TeacherTheses)
-                    .ThenInclude(t => t.Teacher)
-                .Include(e => e.EducationProgram)
-                .Include(r => r.ResearchLine)
-                .OrderBy(d => d.AddedDate)
-                .ToListAsync();
-            theses.ForEach(thesis => thesis.TeacherTheses = thesis.TeacherTheses.OrderBy(o => o.Order).ToList());
+            return View();
+        }
 
-            var results = mapper.Map<IEnumerable<ThesisResource>>(theses);
-            return View(results);
+
+        // GET: /Thesis/Upload
+        [HttpGet]
+        public async Task<IActionResult> Upload(int id)
+        {
+            var thesisInDb = await thesisRepository.GetTheses(id);
+            if (thesisInDb == null) return RedirectToPanel();
+
+            return View(new FileViewModel { Id = id, ControllerName = "Thesis" });
+        }
+
+
+        // POST: /Thesis/Upload
+        [HttpPost]
+        [Authorize(Roles = Roles.Teacher)]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Upload(IFormFile file, FileViewModel thesis)
+        {
+            var userId = userManager.GetUserId(User);
+
+            var thesisInDb = await thesisRepository.GetTheses(thesis.Id);
+            if (thesisInDb == null) return RedirectToPanel();
+            if (!ModelState.IsValid) return View(new FileViewModel { Id = thesis.Id, ControllerName = "Thesis" });
+
+            var bucket = $@"/bucket/{userId}/thesis/";
+            var uploadFilePath = $@"{environment.WebRootPath}{bucket}";
+            var fileName = await fileProductivitySvc.Storage(uploadFilePath, file);
+
+            fileProductivitySvc.Remove(thesisInDb.ThesisPath);
+
+            thesisInDb.ThesisPath = Path.Combine(bucket, fileName);
+            await context.SaveChangesAsync();
+
+            return RedirectToPanel();
         }
 
         // GET: /Thesis/New
@@ -104,126 +119,66 @@ namespace refca.Features.Thesis
         public IActionResult New(string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
-
-            ViewBag.ResearchLineId = new SelectList(_context.ResearchLines, "Id", "Name");
-            ViewBag.EducationProgramId = new SelectList(_context.EducationPrograms, "Id", "Name");
+            ViewBag.ResearchLineId = new SelectList(context.ResearchLines, "Id", "Name");
+            ViewBag.EducationProgramId = new SelectList(context.EducationPrograms, "Id", "Name");
             return View();
         }
+
+
 
         // POST: /Thesis/New
         [HttpPost]
         [Authorize(Roles = Roles.Teacher)]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> New(IFormFile ThesisFile, ThesisViewModel thesis, string returnUrl = null)
+        public async Task<IActionResult> New(ThesisViewModel thesis, string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
 
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
+            ViewBag.ResearchLineId = new SelectList(context.ResearchLines, "Id", "Name");
+            ViewBag.EducationProgramId = new SelectList(context.EducationPrograms, "Id", "Name");
 
-            var researchLine = _context.ResearchLines.SingleOrDefault(r => r.Id == thesis.ResearchLineId);
-            var educationProgram = _context.EducationPrograms.SingleOrDefault(e => e.Id == thesis.EducationProgramId);
+            if (!ModelState.IsValid) return View(thesis);
+            if (!validTeachers(thesis.TeacherIds)) return View("NotFound");
 
-            if (researchLine == null || educationProgram == null)
-                return BadRequest();
+            var newThesis = mapper.Map<Models.Thesis>(thesis);
+            newThesis.AddedDate = DateTime.Now;
+            thesisRepository.Add(newThesis);
 
-            // validating file
-            if (!IsValidFile(ThesisFile))
+            var writterId = thesis.TeacherIds.SingleOrDefault(i => i == userId);
+            if (writterId != null) thesis.TeacherIds.Remove(userId);
+
+            var numOrder = 0;
+            context.TeacherTheses.Add(new TeacherThesis { TeacherId = userId, ThesisId = newThesis.Id, Order = ++numOrder, Role = Roles.Writter });
+            foreach (var teacher in thesis.TeacherIds)
             {
-                ListItems(thesis);
-                return View();
+                context.TeacherTheses.Add(new TeacherThesis { TeacherId = teacher, ThesisId = newThesis.Id, Order = ++numOrder, Role = Roles.Reader });
             }
+            await context.SaveChangesAsync();
 
-            thesis.TeacherIds.Add(userId);
-
-            // validate true teachers
-            var existingTeachers = _context.Teachers.Select(i => i.Id).ToList();
-            var authorIds = thesis.TeacherIds.All(t => existingTeachers.Contains(t));
-            if (authorIds == false)
-                return View("NotFound");
-
-            // getting clean authorList
-            var authorList = GetAuthorList(thesis.TeacherIds);
-            if (ThesisFile != null)
-            {
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(ThesisFile.FileName);
-                var bucket = $@"/bucket/{userId}/thesis/";
-                var userPath = $@"{_environment.WebRootPath}{bucket}";
-                if (!Directory.Exists(userPath))
-                    Directory.CreateDirectory(userPath);
-
-                var physicalPath = Path.Combine(userPath, fileName);
-
-                using (var stream = new FileStream(physicalPath, FileMode.Create))
-                {
-                    await ThesisFile.CopyToAsync(stream);
-                }
-
-
-                if (ModelState.IsValid)
-                {
-                    var newThesis = new Models.Thesis
-                    {
-                        Title = thesis.Title,
-                        StudentName = thesis.StudentName,
-                        AddedDate = DateTime.Now,
-                        PublishedDate = thesis.PublishedDate,
-                        EducationProgramId = thesis.EducationProgramId,
-                        ResearchLineId = thesis.ResearchLineId,
-
-                    };
-                    newThesis.ThesisPath = Path.Combine(bucket, fileName);
-                    _context.Thesis.Add(newThesis);
-                    await _context.SaveChangesAsync();
-
-                    foreach (var author in authorList)
-                    {
-                        var teacherArticle = new TeacherThesis { TeacherId = author.Id, ThesisId = newThesis.Id, Order = author.Order };
-                        _context.TeacherTheses.Add(teacherArticle);
-                    }
-                    await _context.SaveChangesAsync();
-                }
-                else
-                {
-                    ListItems(thesis);
-                    return View(thesis);
-                }
-            }
-            else
-            {
-                ModelState.AddModelError(string.Empty, "El archivo es requerido");
-                ListItems(thesis);
-                return View(thesis);
-            }
-            return RedirectToAction(nameof(ThesisController.List));
+            return RedirectToAction(nameof(ThesisController.Upload), new { Id = newThesis.Id });
         }
+
+
 
         // GET: /Thesis/Edit
         [Authorize(Roles = Roles.AdminAndTeacher)]
         public async Task<IActionResult> Edit(int id)
         {
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
 
-            var thesis = await _context.Thesis.SingleOrDefaultAsync(t => t.Id == id);
-            if (thesis == null)
-                return View("NotFound");
+            var thesisInDb = await context.Thesis.FirstOrDefaultAsync(t => t.Id == id);
+            if (thesisInDb == null) return View("NotFound");
 
-            ViewBag.ResearchLineId = new SelectList(_context.ResearchLines, "Id", "Name", thesis.ResearchLineId);
-            ViewBag.EducationProgramId = new SelectList(_context.EducationPrograms, "Id", "Name", thesis.EducationProgramId);
-            var viewModel = new ThesisViewModel
-            {
-                Id = thesis.Id,
-                Title = thesis.Title,
-                StudentName = thesis.StudentName,
-                PublishedDate = thesis.PublishedDate,
-                EducationProgramId = thesis.EducationProgramId,
-                ResearchLineId = thesis.ResearchLineId
+            ViewBag.ResearchLineId = new SelectList(context.ResearchLines, "Id", "Name", thesisInDb.ResearchLineId);
+            ViewBag.EducationProgramId = new SelectList(context.EducationPrograms, "Id", "Name", thesisInDb.EducationProgramId);
 
-            };
-            viewModel.Teachers = _context.TeacherTheses.Where(p => p.ThesisId == thesis.Id)
+            var writter = context.TeacherTheses.FirstOrDefault(a => a.ThesisId == thesisInDb.Id && a.TeacherId == userId);
+            if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
+
+            var viewModel = mapper.Map<ThesisViewModel>(thesisInDb);
+
+            viewModel.Teachers = context.TeacherTheses.Where(a => a.ThesisId == thesisInDb.Id)
             .OrderBy(o => o.Order).Select(t => t.Teacher).ToList();
 
             return View(viewModel);
@@ -233,153 +188,70 @@ namespace refca.Features.Thesis
         [HttpPost]
         [Authorize(Roles = Roles.AdminAndTeacher)]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, IFormFile ThesisFile, ThesisViewModel thesis, string returnUrl = null)
+        public async Task<IActionResult> Edit(int id, ThesisViewModel thesis, string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
 
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
+            var thesisInDb = await thesisRepository.GetTheses(id);
+            var writter = context.TeacherTheses.FirstOrDefault(a => a.ThesisId == thesisInDb.Id && a.Role == Roles.Writter);
 
-            var researchLine = _context.ResearchLines.SingleOrDefault(r => r.Id == thesis.ResearchLineId);
-            var educationProgram = _context.EducationPrograms.SingleOrDefault(e => e.Id == thesis.EducationProgramId);
+            if (thesisInDb == null) return View("NotFound");
+            if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
+            if (!validTeachers(thesis.TeacherIds)) return View("AccessDenied");
+            if (!ModelState.IsValid) return View(thesis);
 
-            if (researchLine == null || educationProgram == null)
-                return BadRequest();
-
-
-            var thesisInDb = _context.Thesis.Include(e => e.EducationProgram).Include(r => r.ResearchLine).Include(d => d.TeacherTheses)
-                            .SingleOrDefault(t => t.Id == id);
-            if (thesisInDb == null)
-                return View("NotFound");
-
-
-            // Validate null teachersIds
-            if (!thesis.TeacherIds.Any())
+            var writterId = thesis.TeacherIds.SingleOrDefault(i => i == writter.TeacherId);
+            if (writterId == null)
             {
-                _context.Thesis.Remove(thesisInDb);
-                await _context.SaveChangesAsync();
-                return RedirectToView();
+                var filePath = $@"{environment.WebRootPath}{thesisInDb.ThesisPath}";
+                fileProductivitySvc.Remove(filePath);
+                thesisRepository.Remove(thesisInDb);
+                await context.SaveChangesAsync();
+                return RedirectToPanel();
             }
 
-            // validate true teachers
-            var existingTeachers = _context.Teachers.Select(i => i.Id).ToList();
-            var authorIds = thesis.TeacherIds.All(t => existingTeachers.Contains(t));
-            if (authorIds == false)
-                return View("NotFound");
+            thesisInDb.UpdatedDate = DateTime.Now;
+            mapper.Map<ThesisViewModel, Models.Thesis>(thesis, thesisInDb);
 
-            // getting clean authorList
-            var authorList = GetAuthorList(thesis.TeacherIds);
+            thesis.TeacherIds.Remove(writterId);
 
-            var currentPath = thesisInDb.ThesisPath;
-            // if current authors do not have the file, move it to first author
-            if (ExistPath(authorList, currentPath))
+            thesisInDb.TeacherTheses.Where(t => t.ThesisId == thesisInDb.Id && t.TeacherId != writterId)
+            .ToList().ForEach(teacher => thesisInDb.TeacherTheses.Remove(teacher));
+            await context.SaveChangesAsync();
+
+            var numOrder = 1;
+            foreach (var teacherId in thesis.TeacherIds)
             {
-                var authorId = authorList.Select(i => i.Id).FirstOrDefault();
-                currentPath = $@"/bucket/{authorId}/thesis/";
-                if (ThesisFile == null)
-                {
-                    var fileName = Path.GetFileName(thesisInDb.ThesisPath);
-                    var sourcePath = $@"{_environment.WebRootPath}{thesisInDb.ThesisPath}";
-                    var destPath = $@"{_environment.WebRootPath}{currentPath}{fileName}";
-                    var physicalPath = $@"{_environment.WebRootPath}{currentPath}";
-
-                    if (!Directory.Exists(physicalPath))
-                        Directory.CreateDirectory(physicalPath);
-
-                    if (!System.IO.File.Exists(destPath))
-                    {
-                        System.IO.File.Move(sourcePath, destPath);
-                        currentPath = Path.Combine(currentPath, fileName);
-                    }
-                }
-            }
-            // adding new file
-            if (ThesisFile != null)
-            {
-                // validating file
-                if (!IsValidFile(ThesisFile))
-                {
-                    ListItems(thesis);
-                    return View();
-                }
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(ThesisFile.FileName);
-                var bucket = $@"/bucket/{userId}/thesis/";
-                var userPath = $@"{_environment.WebRootPath}{bucket}";
-                var directory = Path.GetDirectoryName(currentPath);
-                var physicalPath = $@"{_environment.WebRootPath}{directory}";
-
-                if (!Directory.Exists(physicalPath))
-                    Directory.CreateDirectory(physicalPath);
-
-                var fullPath = Path.Combine(physicalPath, fileName);
-                var oldPath = $@"{_environment.WebRootPath}{thesisInDb.ThesisPath}";
-
-                System.IO.File.Delete(oldPath);
-
-                using (var stream = new FileStream(fullPath, FileMode.Create))
-                {
-                    await ThesisFile.CopyToAsync(stream);
-                }
-
-                currentPath = $@"{directory}/{fileName}";
-            }
-            // saving changes to thesis
-            if (ModelState.IsValid)
-            {
-                thesisInDb.Title = thesis.Title;
-                thesisInDb.StudentName = thesis.StudentName;
-                thesisInDb.PublishedDate = thesis.PublishedDate;
-                thesisInDb.UpdatedDate = DateTime.Now;
-                thesisInDb.EducationProgramId = thesis.EducationProgramId;
-                thesisInDb.ResearchLineId = thesis.ResearchLineId;
-                thesisInDb.ThesisPath = currentPath;
-
-                thesisInDb.TeacherTheses.Where(t => t.ThesisId == thesisInDb.Id)
-                .ToList().ForEach(teacher => thesisInDb.TeacherTheses.Remove(teacher));
-                await _context.SaveChangesAsync();
-                foreach (var teacher in authorList)
-                {
-                    var teacherTheses = new TeacherThesis { TeacherId = teacher.Id, ThesisId = thesisInDb.Id, Order = teacher.Order };
-                    _context.TeacherTheses.Add(teacherTheses);
-                }
-                await _context.SaveChangesAsync();
+                context.TeacherTheses.Add(new TeacherThesis { TeacherId = teacherId, ThesisId = thesisInDb.Id, Order = ++numOrder, Role = Roles.Reader });
             }
 
-            else
-            {
-                ListItems(thesis);
-                return View(thesis);
-            }
+            await context.SaveChangesAsync();
 
-            return RedirectToView();
+            return RedirectToPanel();
 
         }
 
+
+        // POST: /Thesis/Delete
         [HttpPost]
         [Authorize(Roles = Roles.AdminAndTeacher)]
         [ValidateAntiForgeryToken]
         public IActionResult Delete(int id)
         {
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
+            var thesisInDb = context.Thesis.FirstOrDefault(t => t.Id == id);
+            var writter = context.TeacherTheses.FirstOrDefault(a => a.ThesisId == thesisInDb.Id && a.Role == Roles.Writter);
 
-            var thesisInDb = _context.Thesis.SingleOrDefault(t => t.Id == id);
-            if (thesisInDb == null)
-                return View("NotFound");
+            if (thesisInDb == null) return View("NotFound");
+            if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
 
-            var oldPath = $@"{_environment.WebRootPath}{thesisInDb.ThesisPath}";
+            var filePath = $@"{environment.WebRootPath}{thesisInDb.ThesisPath}";
+            fileProductivitySvc.Remove(filePath);
+            context.Thesis.Remove(thesisInDb);
+            context.SaveChanges();
 
-            if (System.IO.File.Exists(oldPath))
-            {
-                System.IO.File.Delete(oldPath);
-            }
-
-            _context.Thesis.Remove(thesisInDb);
-            _context.SaveChanges();
-
-            return RedirectToView();
+            return RedirectToPanel();
 
         }
 
@@ -387,9 +259,9 @@ namespace refca.Features.Thesis
 
         private void ListItems(ThesisViewModel thesis)
         {
-            ViewBag.ResearchLineId = new SelectList(_context.ResearchLines, "Id", "Name", thesis.ResearchLineId);
-            ViewBag.EducationProgramId = new SelectList(_context.EducationPrograms, "Id", "Name", thesis.EducationProgramId);
-            thesis.Teachers = _context.TeacherTheses.Where(p => p.ThesisId == thesis.Id).Select(t => t.Teacher).ToList();
+            ViewBag.ResearchLineId = new SelectList(context.ResearchLines, "Id", "Name", thesis.ResearchLineId);
+            ViewBag.EducationProgramId = new SelectList(context.EducationPrograms, "Id", "Name", thesis.EducationProgramId);
+            thesis.Teachers = context.TeacherTheses.Where(p => p.ThesisId == thesis.Id).Select(t => t.Teacher).ToList();
         }
 
         private IActionResult RedirectToView()
@@ -457,6 +329,21 @@ namespace refca.Features.Thesis
             }
 
         }
+
+        private IActionResult RedirectToPanel()
+        {
+            if (User.IsInRole(Roles.Admin)) return RedirectToAction(nameof(ThesisController.Manage));
+            return RedirectToAction(nameof(ThesisController.List));
+        }
+
+        private bool validTeachers(List<string> teacherIds)
+        {
+            var existingTeachers = context.Teachers.Select(i => i.Id).ToList();
+            var teachers = teacherIds.All(t => existingTeachers.Contains(t));
+
+            return teachers;
+        }
+
         #endregion
     }
 }

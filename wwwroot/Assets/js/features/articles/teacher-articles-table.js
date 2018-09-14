@@ -78,6 +78,7 @@ $(document).ready(function () {
                 console.log(role);
                 var authorized = (role == 'WRITTER') ? "none" : "disabled-item";
                 var existPath = (path != 'null') ? "none" : "disabled-item";
+                console.log(path);
                 data = `
                 <li class="${authorized}"><a href="/Article/Edit/${id}">Editar</a></li>
                 <li class="${authorized}"><a href="/Article/Upload/${id}">Upload</a></li>

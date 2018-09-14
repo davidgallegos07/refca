@@ -35,15 +35,26 @@ namespace refca.Api.Teacher
         }
 
         // GET: api/theses?{query}
-        [Authorize(Roles = Roles.Teacher)]                
+        [Authorize(Roles = Roles.Teacher)]
         [HttpGet]
         public async Task<QueryResultResource<ThesisResource>> GetTheses(ThesisQueryResource filterResource)
         {
             var filter = Mapper.Map<ThesisQueryResource, ThesisQuery>(filterResource);
-            var userId =  _userManager.GetUserId(HttpContext.User);
+            var userId = _userManager.GetUserId(HttpContext.User);
             var queryResult = await _thesisRepository.GetTeacherTheses(userId, filter);
 
             return Mapper.Map<QueryResult<Thesis>, QueryResultResource<ThesisResource>>(queryResult);
+        }
+
+
+        // GET api/teacher/thesis/{id}/role
+        [Authorize(Roles = Roles.Teacher)]
+        [HttpGet("{id}/Role")]
+        public IActionResult GetThesisRoleTeacher(int id)
+        {
+            var userId = _userManager.GetUserId(User);
+            return Ok(_context.TeacherTheses.Where(t => t.ThesisId == id && t.TeacherId == userId)
+                    .Select(r => r.Role));
         }
     }
 }

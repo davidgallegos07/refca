@@ -75,8 +75,8 @@ $(document).ready(function () {
                 <li class="${authorized}"><a href="/Book/Edit/${id}">Editar</a></li>
                 <li class="${authorized}"><a href="/Book/Upload/${id}">Upload</a></li>
                 <li><a target="_blank" href="${path}">Download</a></li>
-                    <li class="${authorized}">
-                        <form action=" method="post" class="js-delete">
+                        <li class="${authorized}">
+                        <form action="/Book/Delete/${id}" method="post" class="js-delete">
                             <button class="btn-block" type="submit">Eliminar</button>
                             <input name="__RequestVerificationToken" type="hidden" value="${token}">
                         </form>

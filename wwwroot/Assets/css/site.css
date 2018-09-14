@@ -1,7 +1,10 @@
 ﻿.dropdown { padding-top: 0; }
 .dropdown-backdrop { position: unset;}
 .dropdown-menu { padding: 0; }
-.validation-summary-valid { background-color: transparent;}
+.validation-summary-valid {
+  background-color: transparent;
+  border-color: transparent;
+}
 
 /*custom option for acctions button*/
 .dropdown-menu > li > form > button {
@@ -339,3 +342,4 @@ body {
     -webkit-transform: scaleY(1.0);
   }
 }
+

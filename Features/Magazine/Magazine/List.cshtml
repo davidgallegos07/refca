@@ -20,7 +20,23 @@
                 <div class="panel panel-default">
                     <div class="panel-heading"></div>
                     <div class="panel-body">
-                        <a asp-controller="Magazine" asp-action="New" class="btn btn-primary table-button">Nuevo <i class="fa fa-plus" aria-hidden="true"></i></a>
+
+                          <div class="table-button">
+                             <a asp-controller="Magazine" asp-action="New" class="btn btn-primary">Nuevo
+                                <i class="fa fa-plus" aria-hidden="true"></i>
+                            </a>
+                            <div class="btn-group">
+                                <div class="btn-group">
+                                    <a href="#" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">Acciones
+                                        <span class="caret"></span>
+                                    </a>
+                                    <ul class="dropdown-menu actions"></ul>
+                                </div>
+                            </div>
+                        </div>
+
+
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="input-group">
@@ -38,7 +54,8 @@
                                 </label>
                             </div>
                         </div>
-                        <table style="width:100%" class="table table-striped table-bordered table-hover" id="tableEntity">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-bordered table-hover">
                             <thead>
                                 <tr>
                                     <th>Título</th>
@@ -48,14 +65,12 @@
                                     <th>Fecha de publicación</th>
                                     <th>Editor</th>
                                     <th>Autor(es)</th>
-                                    <th>Archivo</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                             </tbody>
                         </table>
+                         </div>
                         <ul id="pagination" class="pagination-sm"></ul>
                     </div>
                 </div>
@@ -66,5 +81,5 @@
 @section Scripts {
     @{ await Html.RenderPartialAsync("_AdministrationList"); }
     @{ await Html.RenderPartialAsync("_DataTable"); }
-    <script src="~/Assets/js/features/teacher/magazines-table.js"></script>
+    <script src="~/Assets/js/features/magazines/teacher-magazines-table.js"></script>
 }

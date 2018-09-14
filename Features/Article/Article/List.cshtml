@@ -28,6 +28,8 @@
                                 </div>
                             </div>
                         </div>
+
+                        
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="input-group">
@@ -68,6 +70,7 @@
     </div>
 </div>
 </div>
-@section Scripts { @{ await Html.RenderPartialAsync("_AdministrationList"); } @{ await Html.RenderPartialAsync("_DataTable");
-}
+@section Scripts {
+     @{ await Html.RenderPartialAsync("_AdministrationList"); }
+      @{ await Html.RenderPartialAsync("_DataTable");}
 <script src="~/Assets/js/features/articles/teacher-articles-table.js"></script> }

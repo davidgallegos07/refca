@@ -7,7 +7,8 @@
                         <div class="input-group">
                             <input type="text" class="form-control" [(ngModel)]="query.searchTerm" (keyup.enter)="onFilterChange()" placeholder="Buscar Presentación  Por Título o Congreso">
                             <span class="input-group-btn">
-                                <button (click)="onFilterChange()" class="btn btn-link" type="button"><i class="fa fa-search" aria-hidden="true"></i></button>
+                                <button (click)="onFilterChange()" class="btn btn-link" type="button"><i class="fa fa-search"
+                                        aria-hidden="true"></i></button>
                             </span>
                         </div>
                     </div>
@@ -34,12 +35,12 @@
                                         <span *ngIf="p.teacherPresentations.length > 1">,</span>
                                     </span>
                                     <span *ngIf="p.teacherPresentations.length > 1">...</span>
-                                    <span class="list-group-item-date">{{p.addedDate | date}}</span>
+                                    <span class="list-group-item-date">{{p.editionDate | date}}</span>
                                 </div>
                             </div>
                             <div class="text-right">
-                                <a target="_blank" href="{{p?.presentationPath}}"><i class="fa fa-download"></i> 
-                                    <span>Descargar</span> 
+                                <a target="_blank" href="{{p?.presentationPath}}"><i class="fa fa-download"></i>
+                                    <span>Descargar</span>
                                 </a>
                             </div>
                         </div>

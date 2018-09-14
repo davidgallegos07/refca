@@ -19,8 +19,14 @@
                 <div class="panel panel-default">
                     <div class="panel-heading"></div>
                     <div class="panel-body">
-                        <a asp-controller="Teacher" asp-action="New" class="btn btn-primary table-button">Nuevo <i class="fa fa-plus" aria-hidden="true"></i></a>
-                        <table style="width:100%" class="table table-striped table-bordered table-hover" id="tableEntity">
+                        <!-- <a asp-controller="Teacher" asp-action="New" class="btn btn-primary table-button">Nuevo <i class="fa fa-plus" aria-hidden="true"></i></a> -->
+                         <div class="table-button">
+                            <a asp-controller="Teacher" asp-action="New" class="btn btn-primary">Nuevo 
+                            <i class="fa fa-plus" aria-hidden="true"></i>
+                            </a>
+                        </div>
+                        <div class="table-responsive">
+                        <table class="table table-striped table-bordered table-hover">
                             <thead>
                                 <tr>
                                     <th>Email</th>
@@ -73,7 +79,8 @@
                                     </tr>
                                 }
                             </tbody>
-                        </table>
+                        </table> 
+                        </div>
                     </div>
                 </div>
             </div>

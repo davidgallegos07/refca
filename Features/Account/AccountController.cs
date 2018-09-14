@@ -85,8 +85,9 @@ namespace refca.Features.Account
                 FacebookProfile = currentUser.FacebookProfile,
                 TwitterProfile = currentUser.TwitterProfile,
                 Biography = currentUser.Biography
+
             };
-           
+
             return View(model);
         }
 
@@ -111,7 +112,7 @@ namespace refca.Features.Account
                 currentUser.FacebookProfile = model.FacebookProfile;
                 currentUser.TwitterProfile = model.TwitterProfile;
                 currentUser.Biography = model.Biography;
-                
+
                 await _context.SaveChangesAsync();
             }
             else
@@ -128,9 +129,9 @@ namespace refca.Features.Account
         public async Task<IActionResult> Login(string returnUrl = null)
         {
             // Clear the existing external cookie to ensure a clean login process
-            if(_signInManager.IsSignedIn(User))
+            if (_signInManager.IsSignedIn(User))
                 return RedirectToAction(nameof(AccountController.Overview));
-                
+
             await HttpContext.Authentication.SignOutAsync(_externalCookieScheme);
             ViewData["ReturnUrl"] = returnUrl;
             return View();
@@ -168,7 +169,7 @@ namespace refca.Features.Account
             // If we got this far, something failed, redisplay form
             return View(model);
         }
-        
+
 
         // POST: /Account/Logout
         [HttpPost]
@@ -179,7 +180,7 @@ namespace refca.Features.Account
             _logger.LogInformation(4, "User logged out.");
             return RedirectToAction(nameof(HomeController.Index), "Home");
         }
-        
+
         // GET: /Account/ResetPassword
         [HttpGet]
         [Authorize(Roles = Roles.Admin)]
@@ -201,16 +202,16 @@ namespace refca.Features.Account
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user == null)
                 return View("Error");
-            
-                model.Code = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var result = await _userManager.ResetPasswordAsync(user, model.Code, model.Password);
-                if (result.Succeeded)
-                {
-                    TempData["StatusMessage"] = "Contraseña reestablecida";
-                    return RedirectToAction(nameof(AccountController.ResetPassword));
-                }
-                AddErrors(result);
-                return View();
+
+            model.Code = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, model.Code, model.Password);
+            if (result.Succeeded)
+            {
+                TempData["StatusMessage"] = "Contraseña reestablecida";
+                return RedirectToAction(nameof(AccountController.ResetPassword));
+            }
+            AddErrors(result);
+            return View();
         }
 
         // GET: /Account/ChangePassword
@@ -235,16 +236,16 @@ namespace refca.Features.Account
             if (user == null)
                 return View("Error");
 
-                var result = await _userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
-                if (result.Succeeded)
-                {
-                    await _signInManager.SignInAsync(user, isPersistent: false);
-                    _logger.LogInformation(3, "User changed their password successfully.");
-                    TempData["StatusMessage"] = "Contraseña actualizada";
-                    return RedirectToAction(nameof(AccountController.ChangePassword));
-                }
-                AddErrors(result);
-                return View(model);
+            var result = await _userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
+            if (result.Succeeded)
+            {
+                await _signInManager.SignInAsync(user, isPersistent: false);
+                _logger.LogInformation(3, "User changed their password successfully.");
+                TempData["StatusMessage"] = "Contraseña actualizada";
+                return RedirectToAction(nameof(AccountController.ChangePassword));
+            }
+            AddErrors(result);
+            return View(model);
         }
 
         // GET /Account/AccessDenied

@@ -16,75 +16,65 @@
         </div>
         <form asp-controller="Research" asp-action="New" enctype="multipart/form-data" method="post">
             <div class="form-horizontal">
-                <div asp-validation-summary="All" class="text-danger"></div>
+                <div asp-validation-summary="All" class="alert alert-danger"></div>
                 <div class="form-group">
                     <label asp-for="Title" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <input asp-for="Title" class="form-control" />
-                        <span asp-validation-for="Title" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="Code" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <input asp-for="Code" class="form-control" />
-                        <span asp-validation-for="Code" class="text-danger" data-msg-number="Ingresa un número entero valido" data-rule-number="true" vocab="123" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="InitialPeriod" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <input asp-for="InitialPeriod" class="form-control" />
-                        <span asp-validation-for="InitialPeriod" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="FinalPeriod" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <input asp-for="FinalPeriod" class="form-control" />
-                        <span asp-validation-for="FinalPeriod" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="Sector" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <input asp-for="Sector" class="form-control" />
-                        <span asp-validation-for="Sector" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="ResearchType" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <input asp-for="ResearchType" class="form-control" />
-                        <span asp-validation-for="ResearchType" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="ResearchDuration" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <input asp-for="ResearchDuration" class="form-control" />
-                        <span asp-validation-for="ResearchDuration" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="KnowledgeAreaId" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <select asp-for="KnowledgeAreaId" asp-items="@ViewBag.KnowledgeAreaId" class="form-control"></select>
-                        <span asp-validation-for="KnowledgeAreaId" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="AcademicBodyId" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <select asp-for="AcademicBodyId" asp-items="@ViewBag.AcademicBodyId" class="form-control"></select>
-                        <span asp-validation-for="AcademicBodyId" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="ResearchLineId" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <select asp-for="ResearchLineId" asp-items="@ViewBag.ResearchLineId" class="form-control"></select>
-                        <span asp-validation-for="ResearchLineId" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">

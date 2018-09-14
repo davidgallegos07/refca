@@ -15,33 +15,29 @@
             
         </div>
         <form asp-controller="Teacher" asp-action="New" asp-route-returnurl="@ViewData["ReturnUrl"]" method="post" class="form-horizontal" enctype="multipart/form-data">
-            <div asp-validation-summary="All" class="text-danger"></div>
+            <div asp-validation-summary="All" class="alert alert-danger"></div>
             <div class="form-group">
                 <label asp-for="Email" class="col-md-2 control-label"></label>
                 <div class="col-md-10">
                     <input asp-for="Email" class="form-control" />
-                    <span asp-validation-for="Email" class="text-danger"></span>
                 </div>
             </div>
             <div class="form-group">
                 <label asp-for="Password" class="col-md-2 control-label"></label>
                 <div class="col-md-10">
                     <input asp-for="Password" class="form-control" />
-                    <span asp-validation-for="Password" class="text-danger"></span>
                 </div>
             </div>
             <div class="form-group">
                 <label asp-for="ConfirmPassword" class="col-md-2 control-label"></label>
                 <div class="col-md-10">
                     <input asp-for="ConfirmPassword" class="form-control" />
-                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
                 </div>
             </div>
             <div class="form-group">
                 <label asp-for="Name" class="col-md-2 control-label"></label>
                 <div class="col-md-10">
                     <input asp-for="Name" class="form-control" />
-                    <span asp-validation-for="Name" class="text-danger"></span>
                 </div>
             </div>
             <div class="form-group">
@@ -52,7 +48,6 @@
                             <input asp-for="SNI" />
                         </label>
                     </div>
-                    <span asp-validation-for="SNI" class="text-danger"></span>
                 </div>
             </div>
             <div class="form-group">
@@ -87,7 +82,6 @@
                 <label asp-for="TeacherCode" class="col-md-2 control-label"></label>
                 <div class="col-md-10">
                     <input asp-for="TeacherCode" class="form-control" />
-                    <span asp-validation-for="TeacherCode" class="text-danger" data-msg-number="Ingresa un número entero valido" data-rule-number="true" />
                 </div>
             </div>
             <div class="form-group">

@@ -13,31 +13,35 @@ using refca.Data;
 using refca.Models;
 using refca.Features.Home;
 using refca.Models.Identity;
-using refca.Models.BookViewModels;
 using refca.Models.ResearchViewModels;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using System.Text.RegularExpressions;
-using refca.Resources;
 using AutoMapper;
 using System.Collections.Generic;
+using refca.Repositories;
+using refca.Core;
+using refca.Models.FileViewModel;
+using refca.Resources;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace refca.Features.Research
 {
     [Authorize]
     public class ResearchController : Controller
     {
-        private RefcaDbContext _context;
-        private IHostingEnvironment _environment;
-        private UserManager<ApplicationUser> _userManager;
+        private RefcaDbContext context;
+        private IHostingEnvironment environment;
+        private UserManager<ApplicationUser> userManager;
         private readonly IMapper mapper;
-
+        private IResearchRepository researchRepository;
+        private readonly IFileProductivityService fileProductivitySvc;
         public ResearchController(RefcaDbContext context, UserManager<ApplicationUser> userManager,
-            IHostingEnvironment environment, IMapper mapper)
+            IHostingEnvironment environment, IMapper mapper, IResearchRepository researchRepository, IFileProductivityService fileProductivitySvc)
         {
             this.mapper = mapper;
-            _context = context;
-            _userManager = userManager;
-            _environment = environment;
+            this.context = context;
+            this.userManager = userManager;
+            this.environment = environment;
+            this.researchRepository = researchRepository;
+            this.fileProductivitySvc = fileProductivitySvc;
         }
 
         // GET: /Research/Manage
@@ -52,27 +56,12 @@ namespace refca.Features.Research
         public async Task<IActionResult> IsApproved(int id, string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
 
-            var researchInDb = await _context.Research.SingleOrDefaultAsync(t => t.Id == id);
-            if (researchInDb == null)
-                return View("NotFound");
+            var researchInDb = await context.Research.SingleOrDefaultAsync(t => t.Id == id);
+            if (researchInDb == null) return View("NotFound");
 
-            if (ModelState.IsValid)
-            {
-                if (researchInDb.IsApproved == true)
-                {
-                    researchInDb.IsApproved = false;
-                }
-                else
-                {
-                    researchInDb.IsApproved = true;
-                }
-
-                await _context.SaveChangesAsync();
-            }
+            researchInDb.IsApproved = researchInDb.IsApproved == true ? researchInDb.IsApproved = false : researchInDb.IsApproved = true;
+            await context.SaveChangesAsync();
 
             return RedirectToAction(nameof(ResearchController.Manage));
         }
@@ -80,34 +69,54 @@ namespace refca.Features.Research
         // GET: /Research/List 
         [HttpGet]
         [Authorize(Roles = Roles.Teacher)]
-        public async Task<IActionResult> List(string returnUrl = null)
+        public IActionResult List()
         {
-            ViewData["ReturnUrl"] = returnUrl;
-            var userId = _userManager.GetUserId(User);
-
-            var research = await _context.Research
-                .Where(m => m.TeacherResearch.Any(r => r.TeacherId == userId))
-                .Include(tr => tr.TeacherResearch)
-                    .ThenInclude(t => t.Teacher)
-                .Include(r => r.ResearchLine)
-                .Include(k => k.KnowledgeArea)
-                .Include(a => a.AcademicBody)
-                .Include(ac => ac.AcademicBody.ConsolidationGrade)
-                .OrderBy(d => d.AddedDate)
-                .ToListAsync();
-            research.ForEach(researchi => researchi.TeacherResearch = researchi.TeacherResearch.OrderBy(o => o.Order).ToList());
-
-            var results = mapper.Map<IEnumerable<ResearchResource>>(research);
-            return View(results);
+            return View();
         }
+
+        // GET: /Research/Upload
+        [HttpGet]
+        public async Task<IActionResult> Upload(int id)
+        {
+            var researchInDb = await researchRepository.GetResearch(id);
+            if (researchInDb == null) return RedirectToPanel();
+
+            return View(new FileViewModel { Id = id, ControllerName = "Research" });
+        }
+
+
+        // POST: /Research/Upload
+        [HttpPost]
+        [Authorize(Roles = Roles.Teacher)]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Upload(IFormFile file, FileViewModel research)
+        {
+            var userId = userManager.GetUserId(User);
+
+            var researchInDb = await researchRepository.GetResearch(research.Id);
+            if (researchInDb == null) return RedirectToPanel();
+            if (!ModelState.IsValid) return View(new FileViewModel { Id = research.Id, ControllerName = "Research" });
+
+            var bucket = $@"/bucket/{userId}/research/";
+            var uploadFilePath = $@"{environment.WebRootPath}{bucket}";
+            var fileName = await fileProductivitySvc.Storage(uploadFilePath, file);
+
+            fileProductivitySvc.Remove(researchInDb.ResearchPath);
+
+            researchInDb.ResearchPath = Path.Combine(bucket, fileName);
+            await context.SaveChangesAsync();
+
+            return RedirectToPanel();
+        }
+
 
         // GET: /Research/New
         [Authorize(Roles = Roles.Teacher)]
         public IActionResult New(string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
-            ViewBag.KnowledgeAreaId = new SelectList(_context.KnowledgeAreas, "Id", "Name");
-            ViewBag.AcademicBodyId = new SelectList(_context.AcademicBodies, "Id", "Name");
+            ViewBag.KnowledgeAreaId = new SelectList(context.KnowledgeAreas, "Id", "Name");
+            ViewBag.AcademicBodyId = new SelectList(context.AcademicBodies, "Id", "Name");
 
             return View();
         }
@@ -116,102 +125,49 @@ namespace refca.Features.Research
         [HttpPost]
         [Authorize(Roles = Roles.Teacher)]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> New(IFormFile ResearchFile, ResearchViewModel research, string returnUrl = null)
+        //IFormFile ResearchFile
+        public async Task<IActionResult> New(ResearchViewModel research, string returnUrl = null)
+
         {
             ViewData["ReturnUrl"] = returnUrl;
 
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
 
-            // validating file
-            if (!IsValidFile(ResearchFile))
+            if (!ModelState.IsValid) return View(research);
+            if (!validTeachers(research.TeacherIds)) return View("NotFound");
+
+            var newResearch = mapper.Map<Models.Research>(research);
+            newResearch.AddedDate = DateTime.Now;
+            researchRepository.Add(newResearch);
+
+            var writterId = research.TeacherIds.SingleOrDefault(i => i == userId);
+            if (writterId != null) research.TeacherIds.Remove(userId);
+
+            var numOrder = 0;
+            context.TeacherResearch.Add(new TeacherResearch { TeacherId = userId, ResearchId = newResearch.Id, Order = ++numOrder, Role = Roles.Writter });
+            foreach (var teacher in research.TeacherIds)
             {
-                ListItems(research);
-                return View();
+                context.TeacherResearch.Add(new TeacherResearch { TeacherId = teacher, ResearchId = newResearch.Id, Order = ++numOrder, Role = Roles.Reader });
             }
-            research.TeacherIds.Add(userId);
+            await context.SaveChangesAsync();
 
-            // validate true teachers
-            var existingTeachers = _context.Teachers.Select(i => i.Id).ToList();
-            var authorIds = research.TeacherIds.All(t => existingTeachers.Contains(t));
-            if (authorIds == false)
-                return View("NotFound");
-
-            // getting clean authorList
-            var authorList = GetAuthorList(research.TeacherIds);
-
-            if (ResearchFile != null)
-            {
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(ResearchFile.FileName);
-                var bucket = $@"/bucket/{userId}/research/";
-                var userPath = $@"{_environment.WebRootPath}{bucket}";
-                if (!Directory.Exists(userPath))
-                    Directory.CreateDirectory(userPath);
-
-                var physicalPath = Path.Combine(userPath, fileName);
-
-                using (var stream = new FileStream(physicalPath, FileMode.Create))
-                {
-                    await ResearchFile.CopyToAsync(stream);
-                }
-
-                if (ModelState.IsValid)
-                {
-                    var newResearch = new Models.Research
-                    {
-                        Title = research.Title,
-                        Code = research.Code,
-                        FinalPeriod = research.FinalPeriod,
-                        InitialPeriod = research.InitialPeriod,
-                        Sector = research.Sector,
-                        ResearchType = research.ResearchType,
-                        ResearchDuration = research.ResearchDuration,
-                        AddedDate = DateTime.Now,
-                        AcademicBodyId = research.AcademicBodyId,
-                        KnowledgeAreaId = research.KnowledgeAreaId,
-                        ResearchLineId = research.ResearchLineId
-                    };
-                    newResearch.ResearchPath = Path.Combine(bucket, fileName);
-                    _context.Research.Add(newResearch);
-                    await _context.SaveChangesAsync();
-
-                    foreach (var author in authorList)
-                    {
-                        var teacherResearch = new TeacherResearch { TeacherId = author.Id, ResearchId = newResearch.Id, Order = author.Order };
-                        _context.TeacherResearch.Add(teacherResearch);
-                    }
-                    await _context.SaveChangesAsync();
-                }
-                else
-                {
-                    ListItems(research);
-                    return View(research);
-                }
-            }
-            else
-            {
-                ModelState.AddModelError(string.Empty, "El archivo es requerido");
-                ListItems(research);
-                return View(research);
-            }
-            return RedirectToAction(nameof(ResearchController.List));
+            return RedirectToAction(nameof(ResearchController.Upload), new { Id = newResearch.Id });
         }
 
         // GET: /Research/Edit
         [Authorize(Roles = Roles.AdminAndTeacher)]
         public async Task<IActionResult> Edit(int id)
         {
-            var userId = _userManager.GetUserId(User);
+            var userId = userManager.GetUserId(User);
             if (userId == null)
                 return View("Error");
 
-            var researchInDb = await _context.Research.SingleOrDefaultAsync(t => t.Id == id);
+            var researchInDb = await context.Research.SingleOrDefaultAsync(t => t.Id == id);
             if (researchInDb == null)
                 return View("NotFound");
 
-            ViewBag.KnowledgeAreaId = new SelectList(_context.KnowledgeAreas, "Id", "Name", researchInDb.KnowledgeAreaId);
-            ViewBag.AcademicBodyId = new SelectList(_context.AcademicBodies, "Id", "Name", researchInDb.AcademicBodyId);
+            ViewBag.KnowledgeAreaId = new SelectList(context.KnowledgeAreas, "Id", "Name", researchInDb.KnowledgeAreaId);
+            ViewBag.AcademicBodyId = new SelectList(context.AcademicBodies, "Id", "Name", researchInDb.AcademicBodyId);
             var viewModel = new ResearchViewModel
             {
                 Title = researchInDb.Title,
@@ -226,7 +182,7 @@ namespace refca.Features.Research
                 KnowledgeAreaId = researchInDb.KnowledgeAreaId,
 
             };
-            viewModel.Teachers = _context.TeacherResearch.Where(p => p.ResearchId == researchInDb.Id)
+            viewModel.Teachers = context.TeacherResearch.Where(p => p.ResearchId == researchInDb.Id)
             .OrderBy(o => o.Order).Select(t => t.Teacher).ToList();
 
             return View(viewModel);
@@ -236,124 +192,51 @@ namespace refca.Features.Research
         [HttpPost]
         [Authorize(Roles = Roles.AdminAndTeacher)]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, IFormFile ResearchFile, ResearchViewModel research, string returnUrl = null)
+        public async Task<IActionResult> Edit(int id, ResearchViewModel research, string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
 
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
+            var researchInDb = await researchRepository.GetResearch(id);
+            var writter = context.TeacherResearch.FirstOrDefault(a => a.ResearchId == researchInDb.Id && a.Role == Roles.Writter);
 
-            var researchInDb = _context.Research.Include(tr => tr.TeacherResearch).SingleOrDefault(t => t.Id == id);
-            if (researchInDb == null)
-                return View("NotFound");
-
-            // Validate null teachersIds
-            if (!research.TeacherIds.Any())
-            {
-                _context.Research.Remove(researchInDb);
-                await _context.SaveChangesAsync();
-                return RedirectToView();
-            }
-
-            // validate true teachers
-            var existingTeachers = _context.Teachers.Select(i => i.Id).ToList();
-            var authorIds = research.TeacherIds.All(t => existingTeachers.Contains(t));
-            if (authorIds == false)
-                return View("NotFound");
-
-            // getting clean authorList
-            var authorList = GetAuthorList(research.TeacherIds);
-
-            var currentPath = researchInDb.ResearchPath;
-            // if current authors do not have the file, move it to first author
-            if (ExistPath(authorList, currentPath))
-            {
-                var authorId = authorList.Select(i => i.Id).FirstOrDefault();
-                currentPath = $@"/bucket/{authorId}/research/";
-                if (ResearchFile == null)
-                {
-                    var fileName = Path.GetFileName(researchInDb.ResearchPath);
-                    var sourcePath = $@"{_environment.WebRootPath}{researchInDb.ResearchPath}";
-                    var destPath = $@"{_environment.WebRootPath}{currentPath}{fileName}";
-                    var physicalPath = $@"{_environment.WebRootPath}{currentPath}";
-
-                    if (!Directory.Exists(physicalPath))
-                        Directory.CreateDirectory(physicalPath);
-
-                    if (!System.IO.File.Exists(destPath))
-                    {
-                        System.IO.File.Move(sourcePath, destPath);
-                        currentPath = Path.Combine(currentPath, fileName);
-                    }
-                }
-            }
-            // adding new file
-
-            if (ResearchFile != null)
-            {
-                // validating file
-                if (!IsValidFile(ResearchFile))
-                {
-                    ListItems(research);
-                    return View();
-                }
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(ResearchFile.FileName);
-                var bucket = $@"/bucket/{userId}/research/";
-                var userPath = $@"{_environment.WebRootPath}{bucket}";
-                var directory = Path.GetDirectoryName(currentPath);
-                var physicalPath = $@"{_environment.WebRootPath}{directory}";
-
-                if (!Directory.Exists(physicalPath))
-                    Directory.CreateDirectory(physicalPath);
-
-                var fullPath = Path.Combine(physicalPath, fileName);
-                var oldPath = $@"{_environment.WebRootPath}{researchInDb.ResearchPath}";
-
-                System.IO.File.Delete(oldPath);
-
-                using (var stream = new FileStream(fullPath, FileMode.Create))
-                {
-                    await ResearchFile.CopyToAsync(stream);
-                }
-
-                currentPath = $@"{directory}/{fileName}";
-            }
-            // saving changes to research
-            if (ModelState.IsValid)
-            {
-                researchInDb.Title = research.Title;
-                researchInDb.Code = research.Code;
-                researchInDb.FinalPeriod = research.FinalPeriod;
-                researchInDb.InitialPeriod = research.InitialPeriod;
-                researchInDb.Sector = research.Sector;
-                researchInDb.ResearchType = research.ResearchType;
-                researchInDb.ResearchDuration = research.ResearchDuration;
-                researchInDb.AcademicBodyId = research.AcademicBodyId;
-                researchInDb.KnowledgeAreaId = research.KnowledgeAreaId;
-                researchInDb.ResearchLineId = research.ResearchLineId;
-                researchInDb.UpdatedDate = DateTime.Now;
-                researchInDb.ResearchPath = currentPath;
-                await _context.SaveChangesAsync();
-
-                researchInDb.TeacherResearch.Where(t => t.ResearchId == researchInDb.Id)
-                 .ToList().ForEach(teacher => researchInDb.TeacherResearch.Remove(teacher));
-                await _context.SaveChangesAsync();
-                foreach (var teacher in authorList)
-                {
-                    var teacherResearch = new TeacherResearch { TeacherId = teacher.Id, ResearchId = researchInDb.Id, Order = teacher.Order };
-                    _context.TeacherResearch.Add(teacherResearch);
-                }
-                await _context.SaveChangesAsync();
-            }
-
-            else
+            if (researchInDb == null) return View("NotFound");
+            if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
+            if (!validTeachers(research.TeacherIds)) return View("AccessDenied");
+            if (!ModelState.IsValid)
             {
                 ListItems(research);
                 return View(research);
             }
 
-            return RedirectToView();
+            var writterId = research.TeacherIds.SingleOrDefault(i => i == writter.TeacherId);
+            if (writterId == null)
+            {
+                var filePath = $@"{environment.WebRootPath}{researchInDb.ResearchPath}";
+                fileProductivitySvc.Remove(filePath);
+                researchRepository.Remove(researchInDb);
+                await context.SaveChangesAsync();
+                return RedirectToPanel();
+            }
+
+            researchInDb.UpdatedDate = DateTime.Now;
+            mapper.Map<ResearchViewModel, Models.Research>(research, researchInDb);
+
+            research.TeacherIds.Remove(writterId);
+
+            researchInDb.TeacherResearch.Where(t => t.ResearchId == researchInDb.Id && t.TeacherId != writterId)
+            .ToList().ForEach(teacher => researchInDb.TeacherResearch.Remove(teacher));
+            await context.SaveChangesAsync();
+
+            var numOrder = 1;
+            foreach (var teacherId in research.TeacherIds)
+            {
+                context.TeacherResearch.Add(new TeacherResearch { TeacherId = teacherId, ResearchId = researchInDb.Id, Order = ++numOrder, Role = Roles.Reader });
+            }
+
+            await context.SaveChangesAsync();
+
+            return RedirectToPanel();
         }
 
         // POST: /Research/Delete
@@ -362,34 +245,29 @@ namespace refca.Features.Research
         [ValidateAntiForgeryToken]
         public IActionResult Delete(int id)
         {
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
+            var researchInDb = context.Research.FirstOrDefault(t => t.Id == id);
+            var writter = context.TeacherResearch.FirstOrDefault(a => a.ResearchId == researchInDb.Id && a.Role == Roles.Writter);
 
-            var researchInDb = _context.Research.SingleOrDefault(t => t.Id == id);
-            if (researchInDb == null)
-                return View("NotFound");
 
-            var oldPath = $@"{_environment.WebRootPath}{researchInDb.ResearchPath}";
+            if (researchInDb == null) return View("NotFound");
+            if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
 
-            if (System.IO.File.Exists(oldPath))
-            {
-                System.IO.File.Delete(oldPath);
-            }
-            _context.Research.Remove(researchInDb);
-            _context.SaveChanges();
+            var filePath = $@"{environment.WebRootPath}{researchInDb.ResearchPath}";
+            fileProductivitySvc.Remove(filePath);
+            context.Research.Remove(researchInDb);
+            context.SaveChanges();
 
-            return RedirectToView();
-
+            return RedirectToPanel();
         }
 
         #region helpers
         private void ListItems(ResearchViewModel research)
         {
-            research.Teachers = _context.TeacherResearch.Where(b => b.ResearchId == research.Id).Select(t => t.Teacher).ToList();
-            ViewBag.ResearchLineId = new SelectList(_context.ResearchLines, "Id", "Name", research.ResearchLineId);
-            ViewBag.KnowledgeAreaId = new SelectList(_context.KnowledgeAreas, "Id", "Name", research.KnowledgeAreaId);
-            ViewBag.AcademicBodyId = new SelectList(_context.AcademicBodies, "Id", "Name", research.AcademicBodyId);
+            research.Teachers = context.TeacherResearch.Where(b => b.ResearchId == research.Id).Select(t => t.Teacher).ToList();
+            ViewBag.ResearchLineId = new SelectList(context.ResearchLines, "Id", "Name", research.ResearchLineId);
+            ViewBag.KnowledgeAreaId = new SelectList(context.KnowledgeAreas, "Id", "Name", research.KnowledgeAreaId);
+            ViewBag.AcademicBodyId = new SelectList(context.AcademicBodies, "Id", "Name", research.AcademicBodyId);
 
         }
         private IActionResult RedirectToView()
@@ -399,28 +277,16 @@ namespace refca.Features.Research
 
             return RedirectToAction(nameof(ResearchController.List));
         }
-        public bool IsValidFile(IFormFile file)
+
+
+        private bool validTeachers(List<string> teacherIds)
         {
-            // validate maximum file length
-            if (file.Length > 31457280)
-            {
-                ModelState.AddModelError(string.Empty, "No se permiten archvios mayores de 30MB");
-                return false;
-            }
-            // validate no empty files
-            if (file.Length == 0)
-            {
-                ModelState.AddModelError(string.Empty, "No se permiten archvios vacios");
-                return false;
-            }
-            // validate file type 
-            if (!file.FileName.EndsWith(".pdf"))
-            {
-                ModelState.AddModelError(string.Empty, "Solo se permiten archivos con extension .pdf");
-                return false;
-            }
-            return true;
+            var existingTeachers = context.Teachers.Select(i => i.Id).ToList();
+            var teachers = teacherIds.All(t => existingTeachers.Contains(t));
+
+            return teachers;
         }
+
         public bool ExistPath(List<Author> authorIds, string currentPath)
         {
             var fileName = Path.GetFileName(currentPath);
@@ -463,6 +329,12 @@ namespace refca.Features.Research
                 return RedirectToAction(nameof(HomeController.Index), "Home");
             }
 
+        }
+
+        private IActionResult RedirectToPanel()
+        {
+            if (User.IsInRole(Roles.Admin)) return RedirectToAction(nameof(ResearchController.Manage));
+            return RedirectToAction(nameof(ResearchController.List));
         }
         #endregion
     }

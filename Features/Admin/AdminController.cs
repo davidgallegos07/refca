@@ -50,10 +50,10 @@ namespace refca.Features.Admin
             if (userId == null)
                 return View("Error");
 
-             var adminRole =  await _context.Roles.SingleOrDefaultAsync(m => m.Name == Roles.Admin);
-             var ownerRole =  await _context.Roles.SingleOrDefaultAsync(m => m.Name == Roles.Owner);
-             var users =  _context.Users.Where(m => m.Roles.Any(r => r.RoleId == adminRole.Id || r.RoleId == ownerRole.Id))
-                 .Include(r => r.Roles);
+            var adminRole = await _context.Roles.SingleOrDefaultAsync(m => m.Name == Roles.Admin);
+            var ownerRole = await _context.Roles.SingleOrDefaultAsync(m => m.Name == Roles.Owner);
+            var users = _context.Users.Where(m => m.Roles.Any(r => r.RoleId == adminRole.Id || r.RoleId == ownerRole.Id))
+                .Include(r => r.Roles);
 
             return View(users);
         }
@@ -109,7 +109,7 @@ namespace refca.Features.Admin
                 await _userManager.DeleteAsync(user);
                 await _context.SaveChangesAsync();
             }
-            
+
             return RedirectToAction(nameof(Administrators));
         }
 
