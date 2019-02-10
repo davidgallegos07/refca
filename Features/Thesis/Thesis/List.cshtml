@@ -20,7 +20,20 @@
                 <div class="panel panel-default">
                     <div class="panel-heading"></div>
                     <div class="panel-body">
-                        <a asp-controller="Thesis" asp-action="New" class="btn btn-primary table-button">Nuevo <i class="fa fa-plus" aria-hidden="true"></i></a>
+                         <div class="table-button">
+                            <a asp-controller="Thesis" asp-action="New" class="btn btn-primary">Nuevo 
+                                <i class="fa fa-plus" aria-hidden="true"></i>
+                            </a>
+                            <div class="btn-group">
+                                <div class="btn-group">
+                                    <a href="#" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">Acciones
+                                        <span class="caret"></span>
+                                    </a>
+                                    <ul class="dropdown-menu actions"></ul>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="input-group">
@@ -32,7 +45,7 @@
                             </div>  
                             <div class="col-md-6">                           
                                 <span>Tesis aprobados</span>
-                                <label class="switch">
+                                <label>
                                 <input id="isApproved" type="checkbox" checked>
                                 <span class="slider round"></span>
                                 </label>
@@ -62,9 +75,6 @@
                                     <th>Línea de investigación</th>
                                     <th>Programa educativo</th>
                                     <th>Director(es)</th>
-                                    <th>Archivo</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -80,5 +90,5 @@
 @section Scripts {
     @{ await Html.RenderPartialAsync("_AdministrationList"); }
     @{ await Html.RenderPartialAsync("_DataTable"); }
-    <script src="~/Assets/js/features/teacher/theses-table.js"></script>
+    <script src="~/Assets/js/features/theses/teacher-theses-table.js"></script>
 }

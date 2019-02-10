@@ -1,7 +1,10 @@
 ﻿.dropdown { padding-top: 0; }
 .dropdown-backdrop { position: unset;}
 .dropdown-menu { padding: 0; }
-.validation-summary-valid { background-color: transparent;}
+.validation-summary-valid {
+  background-color: transparent;
+  border-color: transparent;
+}
 
 /*custom option for acctions button*/
 .dropdown-menu > li > form > button {
@@ -20,7 +23,7 @@
   padding-right: 75px;
 }
 /*switch approved and unapproved*/
-.switch {
+/* .switch {
   position: relative;
   display: inline-block;
   width: 48px;
@@ -30,7 +33,7 @@
 
 .switch input {display:none;}
 
-.slider {
+.swoff {
   position: absolute;
   cursor: pointer;
   top: 0;
@@ -42,9 +45,8 @@
   transition: .4s;
 }
 
-.slider:before {
+.swoff.swon {
   position: absolute;
-  content: "";
   height: 15px;
   width: 15px;
   left: 4px;
@@ -54,18 +56,14 @@
   transition: .4s;
 }
 
-input:checked + .slider {
+.swon {
   background-color: #2196F3;
 }
 
-input:focus + .slider {
-  box-shadow: 0 0 1px #2196F3;
-}
-
-input:checked + .slider:before {
+.swon {
   -webkit-transform: translateX(26px);
   -ms-transform: translateX(26px);
-  transform: translateX(26px);
+  transform: translateX(26px);        
 }
 
 .slider.round {
@@ -74,7 +72,9 @@ input:checked + .slider:before {
 
 .slider.round:before {
   border-radius: 50%;
-}
+} */
+
+/* button logout */
 
 .btn-logout {
   text-decoration:none;
@@ -289,7 +289,7 @@ body {
   margin-left:auto
  }
 }
-
+/* spinner */
 .spinner {
   margin: 100px auto;
   width: 50px;
@@ -342,3 +342,4 @@ body {
     -webkit-transform: scaleY(1.0);
   }
 }
+

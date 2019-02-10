@@ -1,73 +1,52 @@
 $(document).ready(function () {
     var token = $('input[name="__RequestVerificationToken"]').val();
-    var $pagination = $('#pagination');
-    var $spinner = $('.spinner');
-    var $table = $('tbody');
-    var $tbody = $('tbody');
+    var pagination = $('#pagination');
+    var dropdownActions = $('.actions');
+    var spinner = $('.spinner');
+    var table = $('tbody');
+    var tbody = $('tbody');
     var defaultOpts = { totalPages: 1 };
     var query = { page: 1, isApproved: true };
-    $pagination.twbsPagination(defaultOpts);
+    pagination.twbsPagination(defaultOpts);
     loadItems();
 
     function loadItems() {
-        $table.hide();
-        $spinner.show();
+        table.hide();
+        spinner.show();
         $.ajax({
-            url: '/api/admin/research',
+            url: '/api/teacher/research',
             data: query,
             success: function (data) {
-                $spinner.hide();
-                $table.show();
-                $tbody.empty();
+                spinner.hide();
+                table.show();
+                tbody.empty();
                 var datax = '';
                 $.each(data.items, function (key, value) {
                     datax +=
                         `<tr>
-                    <td>${value.code}</td>
-                    <td>${value.title}</td>
-                    <td>${value.knowledgeArea.name}</td>
-                    <td>${value.researchType}</td>
-                    <td>${value.sector}</td>
-                    <td>${value.researchDuration}</td>
-                    <td>${value.academicBody.name}</td>
-                    <td>${value.researchLine.name}</td>                    
+                        <td>${value.code}</td>
+                        <td>${value.title}</td>
+                        <td>${value.knowledgeArea.name}</td>
+                        <td>${value.researchType}</td>
+                        <td>${value.sector}</td>
+                        <td>${value.researchDuration}</td>
+                        <td>${value.academicBody.name}</td>
+                        <td>${value.researchLine.name}</td>  
+                    <td class="id" hidden>${value.id}</td>
+                    <td class="path" hidden>${value.researchPath}</td> 
                     <td>`;
                     $.each(value.teacherResearch, function (key, value) {
-                        datax += '<p>' + value.name + '</p>';
+                        datax += '<div>' + value.name + '</div>';
                     });
                     datax += '</td>';
-                    datax += '<td> <a href="' + value.researchPath + '">Descargar</a></td>';
-                    datax += '<td>';
-                    if (value.isApproved === true)
-                        datax += '<span class="label label-success">Aprobado</span>';
-                    else
-                        datax += '<span class="label label-warning">No aprobado</span>';
-                    datax += '</td>';
-                    datax += `<td>
-                        <a href="/Research/Edit/${value.id}" class="btn btn-sm btn-info"
-                        data-toggle="tooltip" title="Editar"><i class="fa fa-pencil" aria-hidden="true"></i></a>
-
-                        <form action="/Research/Delete/${value.id}" method="post" class="js-delete inline">
-                            <button type="submit" class="btn btn-sm btn-danger" data-toggle="tooltip" title="Eliminar">
-                                <i class="fa fa-trash-o" aria-hidden="true"></i>
-                            </button>
-                            <input name="__RequestVerificationToken" type="hidden" value="${token}">
-                        </form>
-                        <form action="/Research/IsApproved/${value.id}" method="post" class="js-approved inline">
-                            <button type="submit" class="btn btn-sm btn-warning" data-toggle="tooltip" title="No aprobar">
-                                <i class="fa fa-exchange" aria-hidden="true"></i>
-                            </button>
-                            <input name="__RequestVerificationToken" type="hidden" value="${token}">
-                        </form>
-                        </td>`;
                     datax += '</tr>';
                 });
-                $tbody.append(datax);
+                tbody.append(datax);
 
                 var totalPages = Math.ceil(data.totalItems / 10);
                 var currentPage = query.page;
-                $pagination.twbsPagination('destroy');
-                $pagination.twbsPagination($.extend({}, defaultOpts, {
+                pagination.twbsPagination('destroy');
+                pagination.twbsPagination($.extend({}, defaultOpts, {
                     startPage: currentPage,
                     totalPages: totalPages,
                     first: 'primera',
@@ -83,12 +62,44 @@ $(document).ready(function () {
             }
         });
     };
+
     function search() {
         var searchTerm = $('#search-box').val();
         query.page = 1;
         query.searchTerm = searchTerm;
         loadItems();
     };
+
+    $(tbody).on('click', 'tr', function () {
+        var id = $(this).find('.id').text();
+        var path = $(this).find('.path').text();
+        $('tr').removeClass('success');
+        $(this).addClass('success');
+        $.ajax({
+            url: `/api/teacher/research/${id}/role`,
+            success: function (role) {
+                dropdownActions.empty();
+                console.log(role);
+                var authorized = (role == 'WRITTER') ? "none" : "disabled-item";
+                var existPath = (path != 'null') ? "none" : "disabled-item";
+                console.log(path);
+                data = `
+                <li class="${authorized}"><a href="/Research/Edit/${id}">Editar</a></li>
+                <li class="${authorized}"><a href="/Research/Upload/${id}">Upload</a></li>
+                <li class="${existPath}"><a target="_blank" href="${path}">Download</a></li>
+                    <li class="${authorized}">
+                        <form action="/Research/Delete/${id}" method="post" class="js-delete">
+                            <button class="btn-block" type="submit">Eliminar</button>
+                            <input name="__RequestVerificationToken" type="hidden" value="${token}">
+                        </form>
+                    </li>`
+
+                dropdownActions.append(data);
+                $(".disabled-item").remove();
+            }
+        });
+    });
+
     $('#search-box').keypress(function (e) {
         if (e.keyCode == '13')
             search();
@@ -96,10 +107,13 @@ $(document).ready(function () {
     $('#search-btn').click(function () {
         search();
     });
+    
+    $("#isApproved").prop("checked", true);
     $('#isApproved').change(function () {
         query.page = 1;
         query.isApproved = $(this).prop("checked");
         loadItems();
+        dropdownActions.empty();
     });
     $.ajax({
         url: 'api/academicBodies',
@@ -140,4 +154,5 @@ $(document).ready(function () {
         query.knowledgeAreaId = $(this).val();
         loadItems();
     });
+
 });

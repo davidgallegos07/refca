@@ -81,7 +81,7 @@ namespace refca.Features.Book
 
             return View(new FileViewModel { Id = id, ControllerName = "Book" });
         }
-        
+
         // POST: /Book/Upload
         [HttpPost]
         [Authorize(Roles = Roles.Teacher)]
@@ -105,7 +105,7 @@ namespace refca.Features.Book
 
             return RedirectToPanel();
         }
-        
+
         // GET: /Book/New
         [Authorize(Roles = Roles.Teacher)]
         public IActionResult New(string returnUrl = null)
@@ -129,17 +129,17 @@ namespace refca.Features.Book
             if (!validTeachers(book.TeacherIds)) return View("NotFound");
 
             var newBook = mapper.Map<Models.Book>(book);
+            newBook.AddedDate = DateTime.Now;
             bookRepository.Add(newBook);
 
-            var selfAuthor = book.TeacherIds.FirstOrDefault(a => a == userId);
-            if (selfAuthor != null) 
-                book.TeacherIds.Remove(userId);
-            
-            var numOrder = 0;            
-            context.TeacherBooks.Add(new TeacherBook { TeacherId = userId, BookId = newBook.Id, Order = ++numOrder, Role = Roles.Writter});
+            var writterId = book.TeacherIds.SingleOrDefault(i => i == userId);
+            if (writterId != null) book.TeacherIds.Remove(userId);
+
+            var numOrder = 0;
+            context.TeacherBooks.Add(new TeacherBook { TeacherId = userId, BookId = newBook.Id, Order = ++numOrder, Role = Roles.Writter });
             foreach (var teacher in book.TeacherIds)
             {
-                context.TeacherBooks.Add(new TeacherBook { TeacherId = teacher, BookId = newBook.Id, Order = ++numOrder, Role = Roles.Reader});
+                context.TeacherBooks.Add(new TeacherBook { TeacherId = teacher, BookId = newBook.Id, Order = ++numOrder, Role = Roles.Reader });
             }
             await context.SaveChangesAsync();
 
@@ -176,16 +176,16 @@ namespace refca.Features.Book
             ViewData["ReturnUrl"] = returnUrl;
 
             var userId = userManager.GetUserId(User);
-
             var bookInDb = await bookRepository.GetBook(id);
-            if (bookInDb == null) return View("NotFound");
+            var writter = context.TeacherBooks.FirstOrDefault(a => a.BookId == bookInDb.Id && a.Role == Roles.Writter);
 
-            var isTeacherBook = context.TeacherBooks
-                .FirstOrDefault(a => a.BookId == bookInDb.Id && a.TeacherId == userId && a.Role == Roles.Writter);
-            if (User.IsInRole(Roles.Teacher) && isTeacherBook == null) return View("AccessDenied");
-            
-            var adminId = book.TeacherIds.SingleOrDefault(i => i == userId);
-            if (!book.TeacherIds.Any() || adminId == null)
+            if (bookInDb == null) return View("NotFound");
+            if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
+            if (!validTeachers(book.TeacherIds)) return View("AccessDenied");
+            if (!ModelState.IsValid) return View(book);
+
+            var writterId = book.TeacherIds.SingleOrDefault(i => i == writter.TeacherId);
+            if (writterId == null)
             {
                 var filePath = $@"{environment.WebRootPath}{bookInDb.BookPath}";
                 fileProductivitySvc.Remove(filePath);
@@ -194,24 +194,19 @@ namespace refca.Features.Book
                 return RedirectToPanel();
             }
 
-            if (!validTeachers(book.TeacherIds)) return View("AccessDenied");
-            if (!ModelState.IsValid) return View(book);
-
-            mapper.Map<BookViewModel, Models.Book>(book, bookInDb);
             bookInDb.UpdatedDate = DateTime.Now;
-            
-            book.TeacherIds.Remove(userId);
-            
-            bookInDb.TeacherBooks.Where(t => t.BookId == bookInDb.Id && t.TeacherId != userId)
+            mapper.Map<BookViewModel, Models.Book>(book, bookInDb);
+
+            book.TeacherIds.Remove(writterId);
+
+            bookInDb.TeacherBooks.Where(t => t.BookId == bookInDb.Id && t.TeacherId != writterId)
             .ToList().ForEach(teacher => bookInDb.TeacherBooks.Remove(teacher));
             await context.SaveChangesAsync();
 
             var numOrder = 1;
-            foreach (var teacher in book.TeacherIds)
+            foreach (var teacherId in book.TeacherIds)
             {
-                var teacherBooks = new TeacherBook 
-                { TeacherId = teacher, BookId = bookInDb.Id, Order = ++numOrder, Role = Roles.Reader};
-                context.TeacherBooks.Add(teacherBooks);
+                context.TeacherBooks.Add(new TeacherBook { TeacherId = teacherId, BookId = bookInDb.Id, Order = ++numOrder, Role = Roles.Reader });
             }
 
             await context.SaveChangesAsync();
@@ -225,16 +220,13 @@ namespace refca.Features.Book
         public IActionResult Delete(int id)
         {
             var userId = userManager.GetUserId(User);
-            if (userId == null) return View("Error");
-
             var bookInDb = context.Books.FirstOrDefault(t => t.Id == id);
-            if (bookInDb == null) return View("NotFound");
+            var writter = context.TeacherBooks.FirstOrDefault(a => a.BookId == bookInDb.Id && a.Role == Roles.Writter);
 
-            var IsTeacherBook = context.TeacherBooks.FirstOrDefault(a => a.BookId == bookInDb.Id && a.TeacherId == userId);
-            if (User.IsInRole(Roles.Teacher) && IsTeacherBook == null) return View("NotFound");
+            if (bookInDb == null) return View("NotFound");
+            if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
 
             var filePath = $@"{environment.WebRootPath}{bookInDb.BookPath}";
-
             fileProductivitySvc.Remove(filePath);
             context.Books.Remove(bookInDb);
             context.SaveChanges();
@@ -246,8 +238,7 @@ namespace refca.Features.Book
 
         private IActionResult RedirectToPanel()
         {
-            if (User.IsInRole(Roles.Admin))
-                return RedirectToAction(nameof(BookController.Manage));
+            if (User.IsInRole(Roles.Admin)) return RedirectToAction(nameof(BookController.Manage));
 
             return RedirectToAction(nameof(BookController.List));
         }

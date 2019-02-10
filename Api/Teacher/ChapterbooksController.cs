@@ -14,6 +14,8 @@ using refca.Models.QueryFilters;
 using Microsoft.AspNetCore.Authorization;
 using refca.Models.Identity;
 using Microsoft.AspNetCore.Identity;
+using refca.Resources.TeacherQueryResources;
+using refca.Resources.TeacherResources;
 
 namespace refca.Api.Teacher
 
@@ -27,7 +29,7 @@ namespace refca.Api.Teacher
         private readonly UserManager<ApplicationUser> _userManager;
 
         public ChapterbooksController(RefcaDbContext context, IMapper mapper,
-        IChapterbookRepository _chapterbookRepository,  UserManager<ApplicationUser> userManager)
+        IChapterbookRepository _chapterbookRepository, UserManager<ApplicationUser> userManager)
         {
             this._chapterbookRepository = _chapterbookRepository;
             this.mapper = mapper;
@@ -36,15 +38,26 @@ namespace refca.Api.Teacher
         }
 
         // GET: api/chapterbooks?{query}
-        [Authorize(Roles = Roles.Teacher)]                
+        [Authorize(Roles = Roles.Teacher)]
         [HttpGet]
         public async Task<QueryResultResource<ChapterbookResource>> GetChapterbooks(ChapterbookQueryResource filterResource)
         {
             var filter = mapper.Map<ChapterbookQueryResource, ChapterbookQuery>(filterResource);
-            var userId =  _userManager.GetUserId(HttpContext.User);
+            var userId = _userManager.GetUserId(HttpContext.User);
             var queryResult = await _chapterbookRepository.GetTeacherChapterbooks(userId, filter);
 
             return mapper.Map<QueryResult<Chapterbook>, QueryResultResource<ChapterbookResource>>(queryResult);
         }
+
+        // GET api/teacher/chapterbooks/{id}/role
+        [Authorize(Roles = Roles.Teacher)]
+        [HttpGet("{id}/Role")]
+        public IActionResult GetChapterbookRoleTeacher(int id)
+        {
+            var userId = _userManager.GetUserId(User);
+            return Ok(_context.TeacherChapterbooks.Where(t => t.ChapterbookId == id && t.TeacherId == userId)
+                    .Select(r => r.Role));
+        }
+
     }
 }

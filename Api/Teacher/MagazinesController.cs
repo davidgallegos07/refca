@@ -34,15 +34,25 @@ namespace refca.Api.Teacher
         }
 
         // GET: api/magazines?{query}
-        [Authorize(Roles = Roles.Teacher)]                
+        [Authorize(Roles = Roles.Teacher)]
         [HttpGet]
         public async Task<QueryResultResource<MagazineResource>> GetMagazines(MagazineQueryResource filterResource)
         {
             var filter = mapper.Map<MagazineQueryResource, MagazineQuery>(filterResource);
-            var userId =  _userManager.GetUserId(HttpContext.User);
+            var userId = _userManager.GetUserId(HttpContext.User);
             var queryResult = await _magazineRepository.GetTeacherMagazines(userId, filter);
 
             return mapper.Map<QueryResult<Magazine>, QueryResultResource<MagazineResource>>(queryResult);
+        }
+
+        // GET api/teacher/magazines/{id}/role
+        [Authorize(Roles = Roles.Teacher)]
+        [HttpGet("{id}/Role")]
+        public IActionResult GetMagazineRoleTeacher(int id)
+        {
+            var userId = _userManager.GetUserId(User);
+            return Ok(_context.TeacherMagazines.Where(t => t.MagazineId == id && t.TeacherId == userId)
+                    .Select(r => r.Role));
         }
     }
 }

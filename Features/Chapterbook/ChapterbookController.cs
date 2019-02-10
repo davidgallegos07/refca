@@ -79,9 +79,9 @@ namespace refca.Features.Chapterbook
             var chapterbookInDb = await chapterbookRepository.GetChapterbook(id);
             if (chapterbookInDb == null) return RedirectToPanel();
 
-            return View(new FileViewModel { Id = id });
+            return View(new FileViewModel { Id = id, ControllerName = "Chapterbook" });
         }
-        
+
         // POST: /Chapterbook/Upload
         [HttpPost]
         [Authorize(Roles = Roles.Teacher)]
@@ -92,7 +92,7 @@ namespace refca.Features.Chapterbook
 
             var chapterbookInDb = await chapterbookRepository.GetChapterbook(chapterbook.Id);
             if (chapterbookInDb == null) return RedirectToPanel();
-            if (!ModelState.IsValid) return View(chapterbook);
+            if (!ModelState.IsValid) return View(new FileViewModel { Id = chapterbook.Id, ControllerName = "Chapterbook" });
 
             var bucket = $@"/bucket/{userId}/chapterbook/";
             var uploadFilePath = $@"{environment.WebRootPath}{bucket}";
@@ -105,7 +105,7 @@ namespace refca.Features.Chapterbook
 
             return RedirectToPanel();
         }
-        
+
         // GET: /Chapterbook/New
         [Authorize(Roles = Roles.Teacher)]
         public IActionResult New(string returnUrl = null)
@@ -129,18 +129,17 @@ namespace refca.Features.Chapterbook
             if (!validTeachers(chapterbook.TeacherIds)) return View("NotFound");
 
             var newChapterbook = mapper.Map<Models.Chapterbook>(chapterbook);
-            newChapterbook.Owner = userId;
+            newChapterbook.AddedDate = DateTime.Now;
             chapterbookRepository.Add(newChapterbook);
 
             var selfAuthor = chapterbook.TeacherIds.FirstOrDefault(a => a == userId);
-            if (selfAuthor != null) 
-                chapterbook.TeacherIds.Remove(userId);
-            
-            var numOrder = 0;            
-            context.TeacherChapterbooks.Add(new TeacherChapterbook { TeacherId = userId, ChapterbookId = newChapterbook.Id, Order = ++numOrder, Role = Roles.Writter});
+            if (selfAuthor != null) chapterbook.TeacherIds.Remove(userId);
+
+            var numOrder = 0;
+            context.TeacherChapterbooks.Add(new TeacherChapterbook { TeacherId = userId, ChapterbookId = newChapterbook.Id, Order = ++numOrder, Role = Roles.Writter });
             foreach (var teacher in chapterbook.TeacherIds)
             {
-                context.TeacherChapterbooks.Add(new TeacherChapterbook { TeacherId = teacher, ChapterbookId = newChapterbook.Id, Order = ++numOrder, Role = Roles.Reader});
+                context.TeacherChapterbooks.Add(new TeacherChapterbook { TeacherId = teacher, ChapterbookId = newChapterbook.Id, Order = ++numOrder, Role = Roles.Reader });
             }
             await context.SaveChangesAsync();
 
@@ -157,8 +156,8 @@ namespace refca.Features.Chapterbook
             var chapterbookInDb = await context.Chapterbooks.FirstOrDefaultAsync(t => t.Id == id);
             if (chapterbookInDb == null) return View("NotFound");
 
-            var isTeacherChapterbook = context.TeacherChapterbooks.FirstOrDefault(a => a.ChapterbookId == chapterbookInDb.Id && a.TeacherId == userId);
-            if (User.IsInRole(Roles.Teacher) && isTeacherChapterbook == null) return View("AccessDenied");
+            var writter = context.TeacherChapterbooks.FirstOrDefault(a => a.ChapterbookId == chapterbookInDb.Id && a.TeacherId == userId);
+            if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
 
             var viewModel = mapper.Map<ChapterbookViewModel>(chapterbookInDb);
 
@@ -177,16 +176,16 @@ namespace refca.Features.Chapterbook
             ViewData["ReturnUrl"] = returnUrl;
 
             var userId = userManager.GetUserId(User);
-
             var chapterbookInDb = await chapterbookRepository.GetChapterbook(id);
-            if (chapterbookInDb == null) return View("NotFound");
+            var writter = context.TeacherChapterbooks.FirstOrDefault(a => a.ChapterbookId == chapterbookInDb.Id && a.Role == Roles.Writter);
 
-            var isTeacherChapterbook = context.TeacherChapterbooks
-                .FirstOrDefault(a => a.ChapterbookId == chapterbookInDb.Id && a.TeacherId == userId && a.Role == Roles.Writter);
-            if (User.IsInRole(Roles.Teacher) && isTeacherChapterbook == null) return View("AccessDenied");
-            
-            var adminId = chapterbook.TeacherIds.SingleOrDefault(i => i == userId);
-            if (!chapterbook.TeacherIds.Any() || adminId == null)
+            if (chapterbookInDb == null) return View("NotFound");
+            if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
+            if (!validTeachers(chapterbook.TeacherIds)) return View("AccessDenied");
+            if (!ModelState.IsValid) return View(chapterbook);
+
+            var writterId = chapterbook.TeacherIds.SingleOrDefault(i => i == writter.TeacherId);
+            if (writterId == null)
             {
                 var filePath = $@"{environment.WebRootPath}{chapterbookInDb.ChapterbookPath}";
                 fileProductivitySvc.Remove(filePath);
@@ -195,24 +194,19 @@ namespace refca.Features.Chapterbook
                 return RedirectToPanel();
             }
 
-            if (!validTeachers(chapterbook.TeacherIds)) return View("AccessDenied");
-            if (!ModelState.IsValid) return View(chapterbook);
-
-            mapper.Map<ChapterbookViewModel, Models.Chapterbook>(chapterbook, chapterbookInDb);
             chapterbookInDb.UpdatedDate = DateTime.Now;
-            
-            chapterbook.TeacherIds.Remove(userId);
-            
-            chapterbookInDb.TeacherChapterbooks.Where(t => t.ChapterbookId == chapterbookInDb.Id && t.TeacherId != userId)
+            mapper.Map<ChapterbookViewModel, Models.Chapterbook>(chapterbook, chapterbookInDb);
+
+            chapterbook.TeacherIds.Remove(writterId);
+
+            chapterbookInDb.TeacherChapterbooks.Where(t => t.ChapterbookId == chapterbookInDb.Id && t.TeacherId != writterId)
             .ToList().ForEach(teacher => chapterbookInDb.TeacherChapterbooks.Remove(teacher));
             await context.SaveChangesAsync();
 
             var numOrder = 1;
-            foreach (var teacher in chapterbook.TeacherIds)
+            foreach (var teacherId in chapterbook.TeacherIds)
             {
-                var teacherChapterBooks = new TeacherChapterbook 
-                { TeacherId = teacher, ChapterbookId = chapterbookInDb.Id, Order = ++numOrder, Role = Roles.Reader};
-                context.TeacherChapterbooks.Add(teacherChapterBooks);
+                context.TeacherChapterbooks.Add(new TeacherChapterbook { TeacherId = teacherId, ChapterbookId = chapterbookInDb.Id, Order = ++numOrder, Role = Roles.Reader });
             }
 
             await context.SaveChangesAsync();
@@ -225,17 +219,15 @@ namespace refca.Features.Chapterbook
         [Authorize(Roles = Roles.AdminAndTeacher)]
         public IActionResult Delete(int id)
         {
+
             var userId = userManager.GetUserId(User);
-            if (userId == null) return View("Error");
-
             var chapterbookInDb = context.Chapterbooks.FirstOrDefault(t => t.Id == id);
-            if (chapterbookInDb == null) return View("NotFound");
+            var writter = context.TeacherChapterbooks.FirstOrDefault(a => a.ChapterbookId == chapterbookInDb.Id && a.Role == Roles.Writter);
 
-            var IsTeacherChapterbook = context.TeacherChapterbooks.FirstOrDefault(a => a.ChapterbookId == chapterbookInDb.Id && a.TeacherId == userId);
-            if (User.IsInRole(Roles.Teacher) && IsTeacherChapterbook == null) return View("NotFound");
+            if (chapterbookInDb == null) return View("NotFound");
+            if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
 
             var filePath = $@"{environment.WebRootPath}{chapterbookInDb.ChapterbookPath}";
-
             fileProductivitySvc.Remove(filePath);
             context.Chapterbooks.Remove(chapterbookInDb);
             context.SaveChanges();
@@ -243,12 +235,12 @@ namespace refca.Features.Chapterbook
             return RedirectToPanel();
         }
 
-        #region helpers
 
+
+        #region helpers
         private IActionResult RedirectToPanel()
         {
-            if (User.IsInRole(Roles.Admin))
-                return RedirectToAction(nameof(ChapterbookController.Manage));
+            if (User.IsInRole(Roles.Admin)) return RedirectToAction(nameof(ChapterbookController.Manage));
 
             return RedirectToAction(nameof(ChapterbookController.List));
         }

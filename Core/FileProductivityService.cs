@@ -1,5 +1,6 @@
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 
 namespace refca.Core
@@ -7,9 +8,12 @@ namespace refca.Core
     public class FileProductivityService : IFileProductivityService
     {
         private readonly IFileProductivityStorage productivityStorage;
-        public FileProductivityService(IFileProductivityStorage productivityStorage)
+        private IHostingEnvironment environment;
+        
+        public FileProductivityService(IFileProductivityStorage productivityStorage, IHostingEnvironment environment )
         {
             this.productivityStorage = productivityStorage;
+            this.environment = environment;
         }
 
         public void Move(string sourcePath, string destPath)
@@ -22,7 +26,7 @@ namespace refca.Core
         }
         public void Remove(string filePath)
         {
-            if (Directory.Exists(filePath))
+            if (Directory.Exists(filePath) && filePath != environment.WebRootPath)
                 System.IO.File.Delete(filePath);
         }
 

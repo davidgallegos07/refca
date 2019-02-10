@@ -12,5 +12,9 @@ namespace refca.Repositories
         Task<QueryResult<Research>> GetAdminResearch(ResearchQuery filter);
         Task<QueryResult<Research>> GetTeacherResearch(string userId, ResearchQuery filter);
         Task<int> GetNumberOfResearchByTeacher(string userId);
+
+        void Add(Research research);
+        void Remove(Research research);
+        Task<Research> GetResearch(int id);
     }
 }

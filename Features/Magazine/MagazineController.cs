@@ -16,25 +16,35 @@ using refca.Models.Identity;
 using refca.Models.MagazineViewModels;
 using AutoMapper;
 using refca.Resources;
+using refca.Repositories;
 using System.Collections.Generic;
+using refca.Core;
+using refca.Models.FileViewModel;
 
 namespace refca.Features.Magazine
 {
     [Authorize]
     public class MagazineController : Controller
     {
-        private RefcaDbContext _context;
-        private IHostingEnvironment _environment;
-        private UserManager<ApplicationUser> _userManager;
+        private RefcaDbContext context;
+        private IHostingEnvironment environment;
+        private UserManager<ApplicationUser> userManager;
         private readonly IMapper mapper;
 
+        private IMagazineRepository magazineRepository;
+
+        private readonly IFileProductivityService fileProductivitySvc;
+
+
         public MagazineController(RefcaDbContext context, UserManager<ApplicationUser> userManager,
-            IHostingEnvironment environment, IMapper mapper)
+            IHostingEnvironment environment, IMapper mapper, IMagazineRepository magazineRepository, IFileProductivityService fileProductivitySvc)
         {
             this.mapper = mapper;
-            _context = context;
-            _userManager = userManager;
-            _environment = environment;
+            this.context = context;
+            this.userManager = userManager;
+            this.environment = environment;
+            this.magazineRepository = magazineRepository;
+            this.fileProductivitySvc = fileProductivitySvc;
         }
 
         // GET: /Magazine/Manage
@@ -48,51 +58,63 @@ namespace refca.Features.Magazine
         [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> IsApproved(int id, string returnUrl = null)
         {
+
             ViewData["ReturnUrl"] = returnUrl;
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
 
-            var magazineInDb = await _context.Magazines.SingleOrDefaultAsync(t => t.Id == id);
-            if (magazineInDb == null)
-                return View("NotFound");
+            var magazineInDb = await context.Magazines.SingleOrDefaultAsync(t => t.Id == id);
+            if (magazineInDb == null) return View("NotFound");
 
-            if (ModelState.IsValid)
-            {
-                if (magazineInDb.IsApproved == true)
-                {
-                    magazineInDb.IsApproved = false;
-                }
-                else
-                {
-                    magazineInDb.IsApproved = true;
-                }
-
-                await _context.SaveChangesAsync();
-            }
+            magazineInDb.IsApproved = magazineInDb.IsApproved == true ? magazineInDb.IsApproved = false : magazineInDb.IsApproved = true;
+            await context.SaveChangesAsync();
 
             return RedirectToAction(nameof(MagazineController.Manage));
+
         }
 
         // GET: /Magazine/List 
         [HttpGet]
         [Authorize(Roles = Roles.Teacher)]
-        public async Task<IActionResult> List(string returnUrl = null)
+        public IActionResult List()
         {
-            ViewData["ReturnUrl"] = returnUrl;
-            var userId = _userManager.GetUserId(User);
+            return View();
 
-            var magazines = await _context.Magazines
-               .Where(tb => tb.TeacherMagazines.Any(t => t.TeacherId == userId))
-               .Include(tb => tb.TeacherMagazines)
-                   .ThenInclude(t => t.Teacher)
-              .OrderBy(d => d.AddedDate)
-              .ToListAsync();
-            magazines.ForEach(magazine => magazine.TeacherMagazines = magazine.TeacherMagazines.OrderBy(o => o.Order).ToList());
-
-            var results = mapper.Map<IEnumerable<MagazineResource>>(magazines);
-            return View(results);
         }
+
+        // GET: /Magazine/Upload
+        [HttpGet]
+        public async Task<IActionResult> Upload(int id)
+        {
+            var magazineInDb = await magazineRepository.GetMagazines(id);
+            if (magazineInDb == null) return RedirectToPanel();
+
+            return View(new FileViewModel { Id = id, ControllerName = "Magazine" });
+        }
+
+
+        // POST: /magazine/Upload
+        [HttpPost]
+        [Authorize(Roles = Roles.Teacher)]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Upload(IFormFile file, FileViewModel magazine)
+        {
+            var userId = userManager.GetUserId(User);
+
+            var magazineInDb = await magazineRepository.GetMagazines(magazine.Id);
+            if (magazineInDb == null) return RedirectToPanel();
+            if (!ModelState.IsValid) return View(new FileViewModel { Id = magazine.Id, ControllerName = "Magazine" });
+
+            var bucket = $@"/bucket/{userId}/magazine/";
+            var uploadFilePath = $@"{environment.WebRootPath}{bucket}";
+            var fileName = await fileProductivitySvc.Storage(uploadFilePath, file);
+
+            fileProductivitySvc.Remove(magazineInDb.MagazinePath);
+
+            magazineInDb.MagazinePath = Path.Combine(bucket, fileName);
+            await context.SaveChangesAsync();
+
+            return RedirectToPanel();
+        }
+
 
         // GET: /Magazine/New
         [Authorize(Roles = Roles.Teacher)]
@@ -107,231 +129,99 @@ namespace refca.Features.Magazine
         [HttpPost]
         [Authorize(Roles = Roles.Teacher)]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> New(IFormFile MagazineFile, MagazineViewModel magazine, string returnUrl = null)
+        public async Task<IActionResult> New(MagazineViewModel magazine, string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
 
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
 
-            // validating file
-            if (!IsValidFile(MagazineFile))
+            if (!ModelState.IsValid) return View(magazine);
+            if (!validTeachers(magazine.TeacherIds)) return View("NotFound");
+
+            var newMagazine = mapper.Map<Models.Magazine>(magazine);
+            newMagazine.AddedDate = DateTime.Now;
+            magazineRepository.Add(newMagazine);
+
+            var writterId = magazine.TeacherIds.SingleOrDefault(i => i == userId);
+            if (writterId != null) magazine.TeacherIds.Remove(userId);
+
+            var numOrder = 0;
+            context.TeacherMagazines.Add(new TeacherMagazine { TeacherId = userId, MagazineId = newMagazine.Id, Order = ++numOrder, Role = Roles.Writter });
+            foreach (var teacher in magazine.TeacherIds)
             {
-                ListItems(magazine);
-                return View();
+                context.TeacherMagazines.Add(new TeacherMagazine { TeacherId = teacher, MagazineId = newMagazine.Id, Order = ++numOrder, Role = Roles.Reader });
             }
+            await context.SaveChangesAsync();
 
-            magazine.TeacherIds.Add(userId);
-
-            // validate true teachers
-            var existingTeachers = _context.Teachers.Select(i => i.Id).ToList();
-            var authorIds = magazine.TeacherIds.All(t => existingTeachers.Contains(t));
-            if (authorIds == false)
-                return View("NotFound");
-
-            // getting clean authorList
-            var authorList = GetAuthorList(magazine.TeacherIds);
-
-            if (MagazineFile != null)
-            {
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(MagazineFile.FileName);
-                var bucket = $@"/bucket/{userId}/magazine/";
-                var userPath = $@"{_environment.WebRootPath}{bucket}";
-                if (!Directory.Exists(userPath))
-                    Directory.CreateDirectory(userPath);
-
-                var physicalPath = Path.Combine(userPath, fileName);
-
-                using (var stream = new FileStream(physicalPath, FileMode.Create))
-                {
-                    await MagazineFile.CopyToAsync(stream);
-                }
-
-                if (ModelState.IsValid)
-                {
-                    var newMagazine = new Models.Magazine
-                    {
-                        Title = magazine.Title,
-                        Index = magazine.Index,
-                        AddedDate = DateTime.Now,
-                        EditionDate = magazine.EditionDate,
-                        Edition = magazine.Edition,
-                        Editor = magazine.Editor,
-                        ISSN = magazine.ISSN
-
-                    };
-                    newMagazine.MagazinePath = Path.Combine(bucket, fileName);
-                    _context.Magazines.Add(newMagazine);
-                    await _context.SaveChangesAsync();
-
-                    foreach (var author in authorList)
-                    {
-                        var teacherArticle = new TeacherMagazine { TeacherId = author.Id, MagazineId = newMagazine.Id, Order = author.Order };
-                        _context.TeacherMagazines.Add(teacherArticle);
-                    }
-                    await _context.SaveChangesAsync();
-                }
-                else
-                {
-                    ListItems(magazine);
-                    return View(magazine);
-                }
-            }
-            else
-            {
-                ModelState.AddModelError(string.Empty, "El archivo es requerido");
-                ListItems(magazine);
-                return View(magazine);
-            }
-            return RedirectToAction(nameof(MagazineController.List));
+            return RedirectToAction(nameof(MagazineController.Upload), new { Id = newMagazine.Id });
         }
 
         // GET: /Magazine/Edit
         [Authorize(Roles = Roles.AdminAndTeacher)]
         public async Task<IActionResult> Edit(int id)
         {
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
 
-            var magazine = await _context.Magazines.SingleOrDefaultAsync(t => t.Id == id);
-            if (magazine == null)
-                return View("NotFound");
+            var magazineInDb = await context.Magazines.FirstOrDefaultAsync(t => t.Id == id);
+            if (magazineInDb == null) return View("NotFound");
 
-            var viewModel = new MagazineViewModel
-            {
-                Id = magazine.Id,
-                Title = magazine.Title,
-                Index = magazine.Index,
-                Edition = magazine.Edition,
-                EditionDate = magazine.EditionDate,
-                Editor = magazine.Editor,
-                ISSN = magazine.ISSN,
-            };
-            viewModel.Teachers = _context.TeacherMagazines.Where(p => p.MagazineId == magazine.Id)
+            var writter = context.TeacherMagazines.FirstOrDefault(a => a.MagazineId == magazineInDb.Id && a.TeacherId == userId);
+            if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
+
+            var viewModel = mapper.Map<MagazineViewModel>(magazineInDb);
+
+            viewModel.Teachers = context.TeacherMagazines.Where(a => a.MagazineId == magazineInDb.Id)
             .OrderBy(o => o.Order).Select(t => t.Teacher).ToList();
 
             return View(viewModel);
+
         }
 
         // POST: /Magazine/Edit
         [HttpPost]
         [Authorize(Roles = Roles.AdminAndTeacher)]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, IFormFile MagazineFile, MagazineViewModel magazine, string returnUrl = null)
+        public async Task<IActionResult> Edit(int id, MagazineViewModel magazine, string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
 
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
+            var magazineInDb = await magazineRepository.GetMagazines(id);
+            var writter = context.TeacherMagazines.FirstOrDefault(a => a.MagazineId == magazineInDb.Id && a.Role == Roles.Writter);
 
-            var magazineInDb = _context.Magazines.Include(tb => tb.TeacherMagazines).SingleOrDefault(t => t.Id == id);
-            if (magazineInDb == null)
-                return View("NotFound");
+            if (magazineInDb == null) return View("NotFound");
+            if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
+            if (!validTeachers(magazine.TeacherIds)) return View("AccessDenied");
+            if (!ModelState.IsValid) return View(magazine);
 
-            // Validate null teachersIds
-            if (!magazine.TeacherIds.Any())
+            var writterId = magazine.TeacherIds.SingleOrDefault(i => i == writter.TeacherId);
+            if (writterId == null)
             {
-                _context.Magazines.Remove(magazineInDb);
-                await _context.SaveChangesAsync();
-                return RedirectToView();
+                var filePath = $@"{environment.WebRootPath}{magazineInDb.MagazinePath}";
+                fileProductivitySvc.Remove(filePath);
+                magazineRepository.Remove(magazineInDb);
+                await context.SaveChangesAsync();
+                return RedirectToPanel();
             }
 
-            // validate true teachers
-            var existingTeachers = _context.Teachers.Select(i => i.Id).ToList();
-            var authorIds = magazine.TeacherIds.All(t => existingTeachers.Contains(t));
-            if (authorIds == false)
-                return View("NotFound");
+            magazineInDb.UpdatedDate = DateTime.Now;
+            mapper.Map<MagazineViewModel, Models.Magazine>(magazine, magazineInDb);
 
-            // getting clean authorList
-            var authorList = GetAuthorList(magazine.TeacherIds);
+            magazine.TeacherIds.Remove(writterId);
 
-            var currentPath = magazineInDb.MagazinePath;
+            magazineInDb.TeacherMagazines.Where(t => t.MagazineId == magazineInDb.Id && t.TeacherId != writterId)
+            .ToList().ForEach(teacher => magazineInDb.TeacherMagazines.Remove(teacher));
+            await context.SaveChangesAsync();
 
-            // if current authors do not have the file, move it to first author
-            if (ExistPath(authorList, currentPath))
+            var numOrder = 1;
+            foreach (var teacherId in magazine.TeacherIds)
             {
-                var authorId = authorList.Select(i => i.Id).FirstOrDefault();
-                currentPath = $@"/bucket/{authorId}/magazine/";
-                if (MagazineFile == null)
-                {
-                    var fileName = Path.GetFileName(magazineInDb.MagazinePath);
-                    var sourcePath = $@"{_environment.WebRootPath}{magazineInDb.MagazinePath}";
-                    var destPath = $@"{_environment.WebRootPath}{currentPath}{fileName}";
-                    var physicalPath = $@"{_environment.WebRootPath}{currentPath}";
-
-                    if (!Directory.Exists(physicalPath))
-                        Directory.CreateDirectory(physicalPath);
-
-                    if (!System.IO.File.Exists(destPath))
-                    {
-                        System.IO.File.Move(sourcePath, destPath);
-                        currentPath = Path.Combine(currentPath, fileName);
-                    }
-                }
-            }
-            // adding new file
-            if (MagazineFile != null)
-            {
-                // validating file
-                if (!IsValidFile(MagazineFile))
-                {
-                    ListItems(magazine);
-                    return View();
-                }
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(MagazineFile.FileName);
-                var bucket = $@"/bucket/{userId}/magazine/";
-                var userPath = $@"{_environment.WebRootPath}{bucket}";
-                var directory = Path.GetDirectoryName(currentPath);
-                var physicalPath = $@"{_environment.WebRootPath}{directory}";
-
-                if (!Directory.Exists(physicalPath))
-                    Directory.CreateDirectory(physicalPath);
-
-                var fullPath = Path.Combine(physicalPath, fileName);
-                var oldPath = $@"{_environment.WebRootPath}{magazineInDb.MagazinePath}";
-
-                System.IO.File.Delete(oldPath);
-
-                using (var stream = new FileStream(fullPath, FileMode.Create))
-                {
-                    await MagazineFile.CopyToAsync(stream);
-                }
-
-                currentPath = $@"{directory}/{fileName}";
-            }
-            if (ModelState.IsValid)
-            {
-                magazineInDb.Title = magazine.Title;
-                magazineInDb.Index = magazine.Index;
-                magazineInDb.UpdatedDate = DateTime.Now;
-                magazineInDb.MagazinePath = currentPath;
-                magazineInDb.EditionDate = magazine.EditionDate;
-                magazineInDb.Edition = magazine.Edition;
-                magazineInDb.Editor = magazine.Editor;
-                magazineInDb.ISSN = magazine.ISSN;
-                await _context.SaveChangesAsync();
-
-                magazineInDb.TeacherMagazines.Where(t => t.MagazineId == magazineInDb.Id)
-                .ToList().ForEach(teacher => magazineInDb.TeacherMagazines.Remove(teacher));
-                await _context.SaveChangesAsync();
-                foreach (var teacher in authorList)
-                {
-                    var teacherMagazines = new TeacherMagazine { TeacherId = teacher.Id, MagazineId = magazineInDb.Id, Order = teacher.Order };
-                    _context.TeacherMagazines.Add(teacherMagazines);
-                }
-                await _context.SaveChangesAsync();
+                context.TeacherMagazines.Add(new TeacherMagazine { TeacherId = teacherId, MagazineId = magazineInDb.Id, Order = ++numOrder, Role = Roles.Reader });
             }
 
-            else
-            {
-                ListItems(magazine);
-                return View(magazine);
-            }
+            await context.SaveChangesAsync();
 
-            return RedirectToView();
+            return RedirectToPanel();
         }
 
         // POST: /Magazine/Delete
@@ -340,32 +230,26 @@ namespace refca.Features.Magazine
         [ValidateAntiForgeryToken]
         public IActionResult Delete(int id)
         {
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
+            var magazineInDb = context.Magazines.FirstOrDefault(t => t.Id == id);
+            var writter = context.TeacherMagazines.FirstOrDefault(a => a.MagazineId == magazineInDb.Id && a.Role == Roles.Writter);
 
+            if (magazineInDb == null) return View("NotFound");
+            if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
 
-            var magazineInDb = _context.Magazines.SingleOrDefault(t => t.Id == id);
-            if (magazineInDb == null)
-                return View("NotFound");
+            var filePath = $@"{environment.WebRootPath}{magazineInDb.MagazinePath}";
+            fileProductivitySvc.Remove(filePath);
+            context.Magazines.Remove(magazineInDb);
+            context.SaveChanges();
 
-            var oldPath = $@"{_environment.WebRootPath}{magazineInDb.MagazinePath}";
-
-            if (System.IO.File.Exists(oldPath))
-            {
-                System.IO.File.Delete(oldPath);
-            }
-            _context.Magazines.Remove(magazineInDb);
-            _context.SaveChanges();
-
-            return RedirectToView();
+            return RedirectToPanel();
 
         }
 
         #region helpers
         private void ListItems(MagazineViewModel magazine)
         {
-            magazine.Teachers = _context.TeacherMagazines.Where(b => b.MagazineId == magazine.Id).Select(t => t.Teacher).ToList();
+            magazine.Teachers = context.TeacherMagazines.Where(b => b.MagazineId == magazine.Id).Select(t => t.Teacher).ToList();
         }
 
         private IActionResult RedirectToView()
@@ -375,6 +259,15 @@ namespace refca.Features.Magazine
 
             return RedirectToAction(nameof(MagazineController.List));
         }
+
+        private bool validTeachers(List<string> teacherIds)
+        {
+            var existingTeachers = context.Teachers.Select(i => i.Id).ToList();
+            var teachers = teacherIds.All(t => existingTeachers.Contains(t));
+
+            return teachers;
+        }
+
         public bool IsValidFile(IFormFile file)
         {
             // validate maximum file length
@@ -440,6 +333,12 @@ namespace refca.Features.Magazine
                 return RedirectToAction(nameof(HomeController.Index), "Home");
             }
 
+        }
+
+        private IActionResult RedirectToPanel()
+        {
+            if (User.IsInRole(Roles.Admin)) return RedirectToAction(nameof(MagazineController.Manage));
+            return RedirectToAction(nameof(MagazineController.List));
         }
         #endregion
     }

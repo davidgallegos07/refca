@@ -7,17 +7,17 @@
                         <div class="input-group">
                             <input type="text" class="form-control" [(ngModel)]="query.searchTerm" (keyup.enter)="onFilterChange()" placeholder="Buscar Tesis Por Título">
                             <span class="input-group-btn">
-                                <button (click)="onFilterChange()" class="btn btn-link" type="button"><i class="fa fa-search" aria-hidden="true"></i></button>
+                                <button (click)="onFilterChange()" class="btn btn-link" type="button"><i class="fa fa-search"
+                                        aria-hidden="true"></i></button>
                             </span>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <select name="educationProgramId" id="educationProgramId" class="form-control" 
-                        [(ngModel)]="query.educationProgramId" (change)="onFilterChange()">
+                        <select name="educationProgramId" id="educationProgramId" class="form-control" [(ngModel)]="query.educationProgramId" (change)="onFilterChange()">
                             <option [ngValue]="undefined">Programa educativo</option>
-                            <option *ngFor="let ep of educationPrograms" value="{{ep.id}}">{{ep.name}}</option>                           
+                            <option *ngFor="let ep of educationPrograms" value="{{ep.id}}">{{ep.name}}</option>
                         </select>
                     </div>
                 </div>
@@ -51,12 +51,12 @@
                                         <span *ngIf="t.teacherTheses.length > 1">,</span>
                                     </span>
                                     <span *ngIf="t.teacherTheses.length > 1">...</span>
-                                    <span class="list-group-item-date">{{t.addedDate | date}}</span>
+                                    <span class="list-group-item-date">{{t.publishedDate | date}}</span>
                                 </div>
                             </div>
                             <div class="text-right">
-                                <a target="_blank" href="{{t?.thesisPath}}"><i class="fa fa-download"></i> 
-                                    <span>Descargar</span> 
+                                <a target="_blank" href="{{t?.thesisPath}}"><i class="fa fa-download"></i>
+                                    <span>Descargar</span>
                                 </a>
                             </div>
                         </div>

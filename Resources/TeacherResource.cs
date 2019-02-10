@@ -21,6 +21,7 @@ namespace refca.Resources
         public string FacebookProfile { get; set; }
         public string TwitterProfile { get; set; }
         public string Biography { get; set; }
+        public string CVPath {get;set;}
         public KnowledgeAreaResource KnowledgeArea { get; set; }
         public AcademicBodyResource AcademicBody { get; set; }
     }

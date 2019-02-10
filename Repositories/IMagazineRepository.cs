@@ -11,5 +11,12 @@ namespace refca.Repositories
         Task<QueryResult<Magazine>> GetAdminMagazines(MagazineQuery filter);
         Task<QueryResult<Magazine>> GetTeacherMagazines(string userId, MagazineQuery filter);
         Task<int> GetNumberOfMagazinesByTeacher(string userId);
+
+        void Add(Magazine magazine);
+
+        void Remove(Magazine magazine);
+
+        Task<Magazine> GetMagazines(int id);
+    
     }
 }

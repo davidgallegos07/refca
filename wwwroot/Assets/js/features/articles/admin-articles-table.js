@@ -10,7 +10,6 @@ $(document).ready(function () {
     pagination.twbsPagination(defaultOpts);
     loadItems();
 
-
     function loadItems() {
         table.hide();
         spinner.show();
@@ -30,7 +29,8 @@ $(document).ready(function () {
                     <td>${value.editionDate}</td>
                     <td>${value.issn}</td>
                     <td class="id" hidden>${value.id}</td>
-                    <td class="path" hidden>${value.articlePath}</td>  
+                    <td class="path" hidden>${value.articlePath}</td>
+                    <td class="approved" hidden>${value.isApproved}</td>
                     <td>`;
                     $.each(value.teacherArticles, function (key, value) {
                         datax += '<div>' + value.name + '</div>';
@@ -66,15 +66,19 @@ $(document).ready(function () {
         query.searchTerm = searchTerm;
         loadItems();
     };
+
     $(tbody).on('click', 'tr', function () {
         var id = $(this).find('.id').text();
         var path = $(this).find('.path').text();
+        var existPath = (path != 'null') ? "none" : "disabled-item";        
+        var approved = $(this).find('.approved').text();
+        var isApproved = (approved === 'true') ? "No aprobar" : "Aprobar";
         $('tr').removeClass('success');
         $(this).addClass('success');
         dropdownActions.empty();
         data = `
         <li><a href="/Article/Edit/${id}">Editar</a></li>
-        <li><a target="_blank" href="${path}">Download</a></li>
+        <li class="${existPath}"><a target="_blank" href="${path}">Download</a></li>        
         <li>
             <form action="/Article/Delete/${id}" method="post" class="js-delete">
                 <button class="btn-block" type="submit">Eliminar</button>
@@ -83,7 +87,7 @@ $(document).ready(function () {
         </li>
         <li>
         <form action="/Article/IsApproved/${id}" method="post" class="js-delete">
-            <button class="btn-block" type="submit">Aprobar</button>
+            <button class="btn-block" type="submit">${isApproved}</button>
             <input name="__RequestVerificationToken" type="hidden" value="${token}">
         </form>
         </li>
@@ -98,9 +102,12 @@ $(document).ready(function () {
     $('#search-btn').click(function () {
         search();
     });
+    
+    $("#isApproved").prop("checked", true);    
     $('#isApproved').change(function () {
         query.page = 1;
         query.isApproved = $(this).prop("checked");
         loadItems();
+        dropdownActions.empty();
     });
 });

@@ -12,5 +12,9 @@ namespace refca.Repositories
         Task<QueryResult<Thesis>> GetAdminTheses(ThesisQuery filter);
         Task<QueryResult<Thesis>> GetTeacherTheses(string userId, ThesisQuery filter);
         Task<int> GetNumberOfThesesByTeacher(string userId);
+
+        void Add(Thesis thesis);
+        void Remove(Thesis thesis);
+        Task<Thesis> GetTheses(int id);
     }
 }

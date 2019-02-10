@@ -207,7 +207,7 @@ namespace refca.Features.Teacher
             {
                 if (model.SNI == false)
                     model.LevelId = null;
-                
+
                 teacherInDb.Name = model.Name;
                 teacherInDb.TeacherCode = model.TeacherCode;
                 teacherInDb.HasProdep = model.HasProdep;
@@ -346,7 +346,7 @@ namespace refca.Features.Teacher
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(CVFile.FileName);
                 var bucket = $@"/bucket/{userId}/curriculum/";
                 var userPath = $@"{_environment.WebRootPath}{bucket}";
-                
+
                 if (!Directory.Exists(userPath))
                     Directory.CreateDirectory(userPath);
 
@@ -358,10 +358,10 @@ namespace refca.Features.Teacher
 
                 var physicalPath = Path.Combine(userPath, fileName);
 
-                    using (var stream = new FileStream(physicalPath, FileMode.Create))
-                    {
-                        await CVFile.CopyToAsync(stream);
-                    }
+                using (var stream = new FileStream(physicalPath, FileMode.Create))
+                {
+                    await CVFile.CopyToAsync(stream);
+                }
 
                 if (ModelState.IsValid)
                 {

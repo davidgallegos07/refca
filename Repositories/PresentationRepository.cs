@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using refca.Data;
 using refca.Extensions;
@@ -13,20 +14,44 @@ namespace refca.Repositories
 {
     public class PresentationRepository : IPresentationRepository
     {
-        private RefcaDbContext _context;
+        private RefcaDbContext context;
         private readonly IMapper mapper;
 
-        public PresentationRepository(RefcaDbContext context, IMapper mapper)
+        private UserManager<ApplicationUser> UserManager;
+
+
+        public PresentationRepository(RefcaDbContext context, IMapper mapper, UserManager<ApplicationUser> UserManager)
         {
             this.mapper = mapper;
-            _context = context;
+            this.context = context;
+            this.UserManager = UserManager;
         }
 
+
+           public async Task<Presentation> GetPresentation(int id)
+        {
+             return await context.Presentations
+                    .Include(tp => tp.TeacherPresentations)
+                        .ThenInclude(t => t.Teacher)
+                    .SingleOrDefaultAsync(a => a.Id ==id);
+        }
+
+         public void Add(Presentation presentation)
+        {
+            context.Presentations.Add(presentation);
+        }
+
+        public void Remove(Presentation presentation)
+        {
+            context.Presentations.Remove(presentation);
+        }
+
+     
 
         public async Task<QueryResult<Presentation>> GetPresentations(PresentationQuery queryObj)
         {
             var result = new QueryResult<Presentation>();
-            var query = _context.Presentations
+            var query = context.Presentations
                 .Include(tp => tp.TeacherPresentations)
                     .ThenInclude(t => t.Teacher)
                 .Where(p => p.IsApproved == true)
@@ -49,7 +74,7 @@ namespace refca.Repositories
         public async Task<QueryResult<Presentation>> GetAdminPresentations(PresentationQuery queryObj)
         {
             var result = new QueryResult<Presentation>();
-            var query = _context.Presentations
+            var query = context.Presentations
                 .Include(tp => tp.TeacherPresentations)
                     .ThenInclude(t => t.Teacher)
                 .Where(p => p.IsApproved == queryObj.IsApproved)
@@ -72,7 +97,7 @@ namespace refca.Repositories
         public async Task<QueryResult<Presentation>> GetTeacherPresentations(string userId, PresentationQuery queryObj)
         {
             var result = new QueryResult<Presentation>();
-            var query = _context.Presentations
+            var query = context.Presentations
                 .Where(tp => tp.TeacherPresentations.Any(t => t.TeacherId == userId))
                 .Include(tp => tp.TeacherPresentations)
                     .ThenInclude(t => t.Teacher)
@@ -95,7 +120,7 @@ namespace refca.Repositories
         
         public async Task<int> GetNumberOfPresentationsByTeacher(string userId)
         {
-             var presentations = await _context.Presentations
+             var presentations = await context.Presentations
                 .Where(tp => tp.TeacherPresentations.Any(t => t.TeacherId == userId))
                 .Where(p => p.IsApproved == true)
                 .CountAsync();
@@ -112,6 +137,8 @@ namespace refca.Repositories
             p.Congress.ToLower().Contains(term));
             return query;
         }
+
+       
         #endregion
     }
 }

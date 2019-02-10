@@ -25,7 +25,7 @@
             <tbody id="items">
                 <tr *ngFor="let b of books.items">
                     <td>{{b?.title}}</td>
-                    <td>{{b?.editionDate}}</td>
+                    <td>{{b?.editionDate |date }}</td>
                     <td>{{b?.year}}</td>
                     <td>{{b?.isbn}}</td>
                     <td>{{b?.edition}}</td>
@@ -33,8 +33,8 @@
                     <td>{{b?.printLength}}</td>
                     <td>{{b?.genre}}</td>
                     <td>
-                        <a target="_blank" href="{{m?.bookPath}}"><i class="fa fa-download"></i> 
-                            <span>Descargar</span> 
+                        <a target="_blank" href="{{b?.bookPath}}"><i class="fa fa-download"></i>
+                            <span>Descargar</span>
                         </a>
                     </td>
                     <td>

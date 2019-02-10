@@ -15,7 +15,7 @@
     </div>
     <div class="row">
         <div class="col-md-12">
-            <form asp-controller="" asp-action="Upload" enctype="multipart/form-data" method="post">
+            <form asp-controller="@Model.ControllerName" asp-action="Upload" enctype="multipart/form-data" method="post">
                 <div class="form-horizontal">
                     <div asp-validation-summary="All" class="alert alert-danger"></div>
                     <input asp-for="Id" type="hidden" />
