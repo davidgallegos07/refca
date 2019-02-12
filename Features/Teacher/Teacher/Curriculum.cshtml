@@ -22,14 +22,13 @@
             <div class="col-md-12">
                 <div class="col-md-8">
                     <form asp-controller="Teacher" asp-action="Curriculum" enctype="multipart/form-data" method="post">
-                        <div asp-validation-summary="All" class="text-danger"></div>
+                        <div asp-validation-summary="All" class="alert alert-danger"></div>
                         <div class="form-horizontal">
                             <input asp-for="Id" type="hidden" />
                             <div class="form-group">
                                 <label asp-for="CVFile" class="col-md-2 control-label"></label>
                                 <div class="col-md-10">
                                     <input class="btn btn-default" asp-for="CVFile" />
-                                    <span asp-validation-for="CVFile" class="text-danger" />
                                 </div>
                             </div>
                             <div class="form-group">

@@ -24,7 +24,7 @@ namespace refca.Api.Teacher
         private IResearchRepository _researchRepository;
         private readonly IMapper mapper;
         private readonly UserManager<ApplicationUser> _userManager;
-        
+
         public ResearchController(RefcaDbContext context, IMapper mapper,
         IResearchRepository researchRepository, UserManager<ApplicationUser> userManager)
         {
@@ -35,16 +35,26 @@ namespace refca.Api.Teacher
         }
 
         // GET: api/research?{query}
-        [Authorize(Roles = Roles.Teacher)]                
+        [Authorize(Roles = Roles.Teacher)]
         [HttpGet]
         public async Task<QueryResultResource<ResearchResource>> GetResearch(ResearchQueryResource filterResource)
         {
             var filter = mapper.Map<ResearchQueryResource, ResearchQuery>(filterResource);
-            var userId =  _userManager.GetUserId(HttpContext.User);
+            var userId = _userManager.GetUserId(HttpContext.User);
             var queryResult = await _researchRepository.GetTeacherResearch(userId, filter);
 
             return mapper.Map<QueryResult<Research>, QueryResultResource<ResearchResource>>(queryResult);
         }
-        
+
+        // GET api/teacher/research/{id}/role
+        [Authorize(Roles = Roles.Teacher)]
+        [HttpGet("{id}/Role")]
+        public IActionResult GetResearchRoleTeacher(int id)
+        {
+            var userId = _userManager.GetUserId(User);
+            return Ok(_context.TeacherResearch.Where(t => t.ResearchId == id && t.TeacherId == userId)
+                    .Select(r => r.Role));
+        }
+
     }
 }

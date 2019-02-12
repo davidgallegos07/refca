@@ -19,48 +19,42 @@
             
         </div>
         <form asp-controller="Account" asp-action="Profile" asp-route-returnurl="@ViewData["ReturnUrl"]" class="form-horizontal" method="post" enctype="multipart/form-data">
-            <div asp-validation-summary="All" class="text-danger"></div>
+            <div asp-validation-summary="All" class="alert alert-danger"></div>
             <input asp-for="Id" type="hidden" />
             <div class="form-group">
                 <label asp-for="Name" class="col-md-2 control-label"></label>
                 <div class="col-md-10">
                     <input asp-for="Name" class="form-control" />
-                    <span asp-validation-for="Name" class="text-danger"></span>
                 </div>
             </div>
             <div class="form-group">
                 <label asp-for="Avatar" class="col-md-2 control-label"></label>
                 <div class="col-md-10">
                     <input asp-for="Avatar" class="form-control" placeholder="https://gravatar/avatar/0a1b2c3d4e5f6a7b8c9d1e3fa4b5c6d7e8f9" />
-                    <span asp-validation-for="Avatar" class="text-danger"></span>
                 </div>
             </div>
             <div class="form-group">
                 <label asp-for="WebSite" class="col-md-2 control-label"></label>
                 <div class="col-md-10">
                     <input asp-for="WebSite" class="form-control" placeholder="https://misitioweb.com" />
-                    <span asp-validation-for="WebSite" class="text-danger"></span>
                 </div>
             </div>
             <div class="form-group">
                 <label asp-for="FacebookProfile" class="col-md-2 control-label"></label>
                 <div class="col-md-10">
                     <input asp-for="FacebookProfile" class="form-control" placeholder="https://www.facebook.com/usuario" />
-                    <span asp-validation-for="FacebookProfile" class="text-danger"></span>
                 </div>
             </div>
             <div class="form-group">
                 <label asp-for="TwitterProfile" class="col-md-2 control-label"></label>
                 <div class="col-md-10">
                     <input asp-for="TwitterProfile" class="form-control" placeholder="https://twitter.com/usuario" />
-                    <span asp-validation-for="TwitterProfile" class="text-danger"></span>
                 </div>
             </div>
             <div class="form-group">
                 <label asp-for="Biography" class="col-md-2 control-label"></label>
                 <div class="col-md-10">
                     <textarea asp-for="Biography" class="form-control" rows="5"></textarea>
-                    <span asp-validation-for="Biography" class="text-danger"></span>
                 </div>
             </div>
             <div class="form-group">

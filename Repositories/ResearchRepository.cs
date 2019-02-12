@@ -10,23 +10,46 @@ using refca.Resources;
 using refca.Models;
 using refca.Models.QueryFilters;
 using refca.Extensions;
+using Microsoft.AspNetCore.Identity;
+
 namespace refca.Repositories
 {
     public class ResearchRepository : IResearchRepository
     {
-        private readonly RefcaDbContext _context;
+        private  RefcaDbContext context;
         private readonly IMapper mapper;
-        public ResearchRepository(RefcaDbContext context, IMapper mapper)
+        private UserManager<ApplicationUser> UserManager;
+
+        public ResearchRepository(RefcaDbContext context, IMapper mapper, UserManager<ApplicationUser> UserManager)
         {
             this.mapper = mapper;
-            this._context = context;
+            this.context = context;
+            this.UserManager = UserManager;
         }
 
+         public async Task<Research> GetResearch(int id)
+            {
+                return await context.Research
+                    .Include(tp => tp.TeacherResearch)
+                        .ThenInclude(t => t.Teacher)
+                    .SingleOrDefaultAsync(a => a.Id ==id);
+            }
+          public void Add(Research research)
+        {
+            context.Research.Add(research);
+        }
+
+        public void Remove(Research research)
+        {
+            context.Remove(research);
+        }
+
+       
         public async Task<QueryResult<Research>> GetResearch(ResearchQuery queryObj)
         {
             var result = new QueryResult<Research>();
 
-            var query = _context.Research
+            var query = context.Research
                .Include(tp => tp.TeacherResearch)
                    .ThenInclude(t => t.Teacher)
                .Include(r => r.ResearchLine)
@@ -54,7 +77,7 @@ namespace refca.Repositories
         {
             var result = new QueryResult<Research>();
 
-            var query = _context.Research
+            var query = context.Research
                 .Include(tp => tp.TeacherResearch)
                     .ThenInclude(t => t.Teacher)
                 .Include(r => r.ResearchLine)
@@ -82,7 +105,7 @@ namespace refca.Repositories
         {
             var result = new QueryResult<Research>();
 
-            var query = _context.Research
+            var query = context.Research
                 .Where(tr => tr.TeacherResearch.Any(t => t.TeacherId == userId))
                 .Include(tp => tp.TeacherResearch)
                     .ThenInclude(t => t.Teacher)
@@ -108,13 +131,14 @@ namespace refca.Repositories
         }
         public async Task<int> GetNumberOfResearchByTeacher(string userId)
         {
-            var research = await _context.Research
+            var research = await context.Research
                 .Where(tp => tp.TeacherResearch.Any(t => t.TeacherId == userId))
                 .Where(p => p.IsApproved == true)
                 .CountAsync();
 
             return research;
         }
+
 
         #region helpers
         public static IQueryable<Research> ApplyFiltering(IQueryable<Research> query, ResearchQuery queryObj)
@@ -141,6 +165,8 @@ namespace refca.Repositories
 
             return query;
         }
+
+      
         #endregion
     }
 }

@@ -15,33 +15,29 @@
         </div>
         <form asp-controller="Thesis" asp-action="New" enctype="multipart/form-data" method="post">
             <div class="form-horizontal">
-                <div asp-validation-summary="All" class="text-danger"></div>
+                <div asp-validation-summary="All" class="alert alert-danger"></div>
                 <div class="form-group">
                     <label asp-for="Title" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <input asp-for="Title" class="form-control" />
-                        <span asp-validation-for="Title" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="StudentName" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <input asp-for="StudentName" class="form-control" />
-                        <span asp-validation-for="StudentName" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="EducationProgramId" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <select asp-for="EducationProgramId" asp-items="@ViewBag.EducationProgramId" class="form-control"></select>
-                        <span asp-validation-for="EducationProgramId" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="ResearchLineId" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <select asp-for="ResearchLineId" asp-items="@ViewBag.ResearchLineId" class="form-control"></select>
-                        <span asp-validation-for="ResearchLineId" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
@@ -50,7 +46,6 @@
                         <div class="input-group date">
                             <input asp-for="PublishedDate" class="form-control" /><span class="input-group-addon"><i class="glyphicon glyphicon-th"></i></span>
                         </div>
-                        <span asp-validation-for="PublishedDate" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">

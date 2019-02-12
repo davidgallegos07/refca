@@ -4,7 +4,8 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
-
+using refca.Resources;
+using refca.Models.CustomModelValidation;
 namespace refca.Models.ChapterbookViewModels
 {
     public class ChapterbookViewModel
@@ -24,7 +25,7 @@ namespace refca.Models.ChapterbookViewModels
         [Required(ErrorMessage = "La fecha de publicación es requerida")]
         [Display(Name = "Fecha de publicación")]
         [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
-        public DateTime PublishedDate { get; set; } 
+        public DateTime PublishedDate { get; set; }
 
         [Required(ErrorMessage = "El ISBN es requerido")]
         [StringLength(13, ErrorMessage = "Inserte ISBN válido", MinimumLength = 10)]
@@ -36,8 +37,8 @@ namespace refca.Models.ChapterbookViewModels
         [Display(Name = "Editorial")]
         public string Editorial { get; set; }
 
-        [Display(Name = "Archivo de capítulo de libro")]
-        public IFormFile ChapterbookFile { get; set; }
+        // [Display(Name = "Archivo de capítulo de libro")]
+        // public IFormFile ChapterbookFile { get; set; }
 
         public IEnumerable<Teacher> Teachers { get; set; }
         public List<string> TeacherIds { get; set; }
@@ -46,5 +47,5 @@ namespace refca.Models.ChapterbookViewModels
             TeacherIds = new List<string>();
         }
     }
- 
+
 }

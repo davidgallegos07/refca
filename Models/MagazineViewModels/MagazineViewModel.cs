@@ -41,8 +41,8 @@ namespace refca.Models.MagazineViewModels
         [Display(Name = "Número de edición")]
         public short Edition { get; set; } 
 
-        [Display(Name = "Archivo de revista")]
-        public IFormFile MagazineFile { get; set; }
+        // [Display(Name = "Archivo de revista")]
+        // public IFormFile MagazineFile { get; set; }
 
         public IEnumerable<Teacher> Teachers { get; set; }
         public List<string> TeacherIds { get; set; }

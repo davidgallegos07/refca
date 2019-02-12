@@ -17,24 +17,32 @@ using refca.Models.PresentationViewModels;
 using AutoMapper;
 using refca.Resources;
 using System.Collections.Generic;
+using refca.Repositories;
+using refca.Models.FileViewModel;
+using refca.Core;
 
 namespace refca.Features.Presentation
 {
     [Authorize]
     public class PresentationController : Controller
     {
-        private RefcaDbContext _context;
-        private IHostingEnvironment _environment;
-        private UserManager<ApplicationUser> _userManager;
+        private RefcaDbContext context;
+        private IHostingEnvironment environment;
+        private UserManager<ApplicationUser> userManager;
         private readonly IMapper mapper;
+        private IPresentationRepository presentationRepository;
+        private readonly IFileProductivityService fileProductivitySvc;
+
 
         public PresentationController(RefcaDbContext context, UserManager<ApplicationUser> userManager,
-            IHostingEnvironment environment, IMapper mapper)
+            IHostingEnvironment environment, IMapper mapper, IPresentationRepository presentationRepository, IFileProductivityService fileProductivitySvc)
         {
             this.mapper = mapper;
-            _context = context;
-            _userManager = userManager;
-            _environment = environment;
+            this.context = context;
+            this.userManager = userManager;
+            this.environment = environment;
+            this.presentationRepository = presentationRepository;
+            this.fileProductivitySvc = fileProductivitySvc;
         }
 
         // GET: /Presentation/Manage
@@ -49,28 +57,12 @@ namespace refca.Features.Presentation
         public async Task<IActionResult> IsApproved(int id, string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
 
-            var presentationInDb = await _context.Presentations.SingleOrDefaultAsync(t => t.Id == id);
-            if (presentationInDb == null)
-            {
-                return View("NotFound");
-            }
-            if (ModelState.IsValid)
-            {
-                if (presentationInDb.IsApproved == true)
-                {
-                    presentationInDb.IsApproved = false;
-                }
-                else
-                {
-                    presentationInDb.IsApproved = true;
-                }
+            var presentationInDb = await context.Presentations.SingleOrDefaultAsync(t => t.Id == id);
+            if (presentationInDb == null) return View("NotFound");
 
-                await _context.SaveChangesAsync();
-            }
+            presentationInDb.IsApproved = presentationInDb.IsApproved == true ? presentationInDb.IsApproved = false : presentationInDb.IsApproved = true;
+            await context.SaveChangesAsync();
 
             return RedirectToAction(nameof(PresentationController.Manage));
         }
@@ -78,22 +70,52 @@ namespace refca.Features.Presentation
         // GET: /Presentation/List 
         [HttpGet]
         [Authorize(Roles = Roles.Teacher)]
-        public async Task<IActionResult> List(string returnUrl = null)
+        public IActionResult List()
         {
-            ViewData["ReturnUrl"] = returnUrl;
-            var userId = _userManager.GetUserId(User);
-
-            var presentations = await _context.Presentations
-               .Where(tb => tb.TeacherPresentations.Any(t => t.TeacherId == userId))
-               .Include(tb => tb.TeacherPresentations)
-                   .ThenInclude(t => t.Teacher)
-              .OrderBy(d => d.AddedDate)
-              .ToListAsync();
-            presentations.ForEach(presentation => presentation.TeacherPresentations = presentation.TeacherPresentations.OrderBy(o => o.Order).ToList());
-
-            var results = mapper.Map<IEnumerable<PresentationResource>>(presentations);
-            return View(results);
+            return View();
         }
+
+
+        // GET: /Presentation/Upload
+        [HttpGet]
+        public async Task<IActionResult> Upload(int id)
+        {
+            var presentationInDb = await presentationRepository.GetPresentation(id);
+            if (presentationInDb == null) return RedirectToPanel();
+
+            return View(new FileViewModel { Id = id, ControllerName = "Presentation" });
+        }
+
+        // POST: /Presentation/Upload
+        [HttpPost]
+        [Authorize(Roles = Roles.Teacher)]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Upload(IFormFile file, FileViewModel presentation)
+        {
+            var userId = userManager.GetUserId(User);
+
+            var presentationInDb = await presentationRepository.GetPresentation(presentation.Id);
+            if (presentationInDb == null) return RedirectToPanel();
+            if (!ModelState.IsValid) return View(new FileViewModel { Id = presentation.Id, ControllerName = "Presentation" });
+
+            var bucket = $@"/bucket/{userId}/research/";
+            var uploadFilePath = $@"{environment.WebRootPath}{bucket}";
+            var fileName = await fileProductivitySvc.Storage(uploadFilePath, file);
+
+            fileProductivitySvc.Remove(presentationInDb.PresentationPath);
+
+            presentationInDb.PresentationPath = Path.Combine(bucket, fileName);
+            await context.SaveChangesAsync();
+
+            return RedirectToPanel();
+        }
+
+
+
+
+
+
+
 
         // GET: /Presentation/New
         [Authorize(Roles = Roles.Teacher)]
@@ -108,102 +130,48 @@ namespace refca.Features.Presentation
         [HttpPost]
         [Authorize(Roles = Roles.Teacher)]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> New(IFormFile PresentationFile, PresentationViewModel presentation, string returnUrl = null)
+        public async Task<IActionResult> New(PresentationViewModel presentation, string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
 
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
 
-            // validating file
-            if (!IsValidFile(PresentationFile))
+            if (!ModelState.IsValid) return View(presentation);
+            if (!validTeachers(presentation.TeacherIds)) return View("NotFound");
+
+            var newPresentation = mapper.Map<Models.Presentation>(presentation);
+            newPresentation.AddedDate = DateTime.Now;
+            presentationRepository.Add(newPresentation);
+
+            var writterId = presentation.TeacherIds.SingleOrDefault(i => i == userId);
+            if (writterId != null) presentation.TeacherIds.Remove(userId);
+
+            var numOrder = 0;
+            context.TeacherPresentations.Add(new TeacherPresentation { TeacherId = userId, PresentationId = newPresentation.Id, Order = ++numOrder, Role = Roles.Writter });
+            foreach (var teacher in presentation.TeacherIds)
             {
-                ListItems(presentation);
-                return View();
+                context.TeacherPresentations.Add(new TeacherPresentation { TeacherId = teacher, PresentationId = newPresentation.Id, Order = ++numOrder, Role = Roles.Reader });
             }
+            await context.SaveChangesAsync();
 
-            presentation.TeacherIds.Add(userId);
-
-            // validate true teachers
-            var existingTeachers = _context.Teachers.Select(i => i.Id).ToList();
-            var authorIds = presentation.TeacherIds.All(t => existingTeachers.Contains(t));
-            if (authorIds == false)
-                return View("NotFound");
-
-            // getting clean authorList
-            var authorList = GetAuthorList(presentation.TeacherIds);
-            if (PresentationFile != null)
-            {
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(PresentationFile.FileName);
-                var bucket = $@"/bucket/{userId}/presentation/";
-                var userPath = $@"{_environment.WebRootPath}{bucket}";
-                if (!Directory.Exists(userPath))
-                    Directory.CreateDirectory(userPath);
-
-                var physicalPath = Path.Combine(userPath, fileName);
-
-                using (var stream = new FileStream(physicalPath, FileMode.Create))
-                {
-                    await PresentationFile.CopyToAsync(stream);
-                }
-
-                if (ModelState.IsValid)
-                {
-                    var newPresentation = new Models.Presentation
-                    {
-                        Title = presentation.Title,
-                        Congress = presentation.Congress,
-                        AddedDate = DateTime.Now,
-                        EditionDate = presentation.EditionDate,
-                    };
-
-                    newPresentation.PresentationPath = Path.Combine(bucket, fileName);
-                    _context.Presentations.Add(newPresentation);
-                    await _context.SaveChangesAsync();
-
-                    foreach (var author in authorList)
-                    {
-                        var teacherPresentation = new TeacherPresentation { TeacherId = author.Id, PresentationId = newPresentation.Id, Order = author.Order };
-                        _context.TeacherPresentations.Add(teacherPresentation);
-                    }
-                    await _context.SaveChangesAsync();
-                }
-                else
-                {
-                    ListItems(presentation);
-                    return View(presentation);
-                }
-            }
-            else
-            {
-                ModelState.AddModelError(string.Empty, "El archivo es requerido");
-                ListItems(presentation);
-                return View(presentation);
-            }
-            return RedirectToAction(nameof(PresentationController.List));
+            return RedirectToAction(nameof(PresentationController.Upload), new { Id = newPresentation.Id });
         }
 
         // GET: /Presentation/Edit
         [Authorize(Roles = Roles.AdminAndTeacher)]
         public async Task<IActionResult> Edit(int id)
         {
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
 
-            var presentation = await _context.Presentations.SingleOrDefaultAsync(t => t.Id == id);
-            if (presentation == null)
-                return View("NotFound");
+            var presentationInDb = await context.Presentations.FirstOrDefaultAsync(t => t.Id == id);
+            if (presentationInDb == null) return View("NotFound");
 
-            var viewModel = new PresentationViewModel
-            {
-                Id = presentation.Id,
-                Congress = presentation.Congress,
-                Title = presentation.Title,
-                EditionDate = presentation.EditionDate,
-            };
-            viewModel.Teachers = _context.TeacherPresentations.Where(p => p.PresentationId == presentation.Id)
+            var writter = context.TeacherPresentations.FirstOrDefault(a => a.PresentationId == presentationInDb.Id && a.TeacherId == userId);
+            if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
+
+            var viewModel = mapper.Map<PresentationViewModel>(presentationInDb);
+
+            viewModel.Teachers = context.TeacherPresentations.Where(a => a.PresentationId == presentationInDb.Id)
             .OrderBy(o => o.Order).Select(t => t.Teacher).ToList();
 
             return View(viewModel);
@@ -213,117 +181,47 @@ namespace refca.Features.Presentation
         [HttpPost]
         [Authorize(Roles = Roles.AdminAndTeacher)]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, IFormFile PresentationFile, PresentationViewModel presentation, string returnUrl = null)
+        public async Task<IActionResult> Edit(int id, PresentationViewModel presentation, string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
 
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
+            var presentationInDb = await presentationRepository.GetPresentation(id);
+            var writter = context.TeacherPresentations.FirstOrDefault(a => a.PresentationId == presentationInDb.Id && a.Role == Roles.Writter);
 
-            var presentationInDb = _context.Presentations.Include(tb => tb.TeacherPresentations).SingleOrDefault(t => t.Id == id);
-            if (presentationInDb == null)
-                return View("NotFound");
+            if (presentationInDb == null) return View("NotFound");
+            if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
+            if (!validTeachers(presentation.TeacherIds)) return View("AccessDenied");
+            if (!ModelState.IsValid) return View(presentation);
 
-            // Validate null teachersIds
-            if (!presentation.TeacherIds.Any())
+            var writterId = presentation.TeacherIds.SingleOrDefault(i => i == writter.TeacherId);
+            if (writterId == null)
             {
-                _context.Presentations.Remove(presentationInDb);
-                await _context.SaveChangesAsync();
-                return RedirectToView();
+                var filePath = $@"{environment.WebRootPath}{presentationInDb.PresentationPath}";
+                fileProductivitySvc.Remove(filePath);
+                presentationRepository.Remove(presentationInDb);
+                await context.SaveChangesAsync();
+                return RedirectToPanel();
             }
 
-            // validate true teachers
-            var existingTeachers = _context.Teachers.Select(i => i.Id).ToList();
-            var authorIds = presentation.TeacherIds.All(t => existingTeachers.Contains(t));
-            if (authorIds == false)
-                return View("NotFound");
+            presentationInDb.UpdatedDate = DateTime.Now;
+            mapper.Map<PresentationViewModel, Models.Presentation>(presentation, presentationInDb);
 
-            // getting clean authorList
-            var authorList = GetAuthorList(presentation.TeacherIds);
+            presentation.TeacherIds.Remove(writterId);
 
-            var currentPath = presentationInDb.PresentationPath;
+            presentationInDb.TeacherPresentations.Where(t => t.PresentationId == presentationInDb.Id && t.TeacherId != writterId)
+            .ToList().ForEach(teacher => presentationInDb.TeacherPresentations.Remove(teacher));
+            await context.SaveChangesAsync();
 
-            // if current authors do not have the file, move it to first author
-            if (ExistPath(authorList, currentPath))
+            var numOrder = 1;
+            foreach (var teacherId in presentation.TeacherIds)
             {
-                var authorId = authorList.Select(i => i.Id).FirstOrDefault();
-                currentPath = $@"/bucket/{authorId}/presentation/";
-                if (PresentationFile == null)
-                {
-                    var fileName = Path.GetFileName(presentationInDb.PresentationPath);
-                    var sourcePath = $@"{_environment.WebRootPath}{presentationInDb.PresentationPath}";
-                    var destPath = $@"{_environment.WebRootPath}{currentPath}{fileName}";
-                    var physicalPath = $@"{_environment.WebRootPath}{currentPath}";
-
-                    if (!Directory.Exists(physicalPath))
-                        Directory.CreateDirectory(physicalPath);
-
-                    if (!System.IO.File.Exists(destPath))
-                    {
-                        System.IO.File.Move(sourcePath, destPath);
-                        currentPath = Path.Combine(currentPath, fileName);
-                    }
-                }
-            }
-            if (PresentationFile != null)
-            {
-                // validating file
-                if (!IsValidFile(PresentationFile))
-                {
-                    ListItems(presentation);
-                    return View();
-                }
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(PresentationFile.FileName);
-                var bucket = $@"/bucket/{userId}/presentation/";
-                var userPath = $@"{_environment.WebRootPath}{bucket}";
-                var directory = Path.GetDirectoryName(currentPath);
-                var physicalPath = $@"{_environment.WebRootPath}{directory}";
-
-                if (!Directory.Exists(physicalPath))
-                    Directory.CreateDirectory(physicalPath);
-
-                var fullPath = Path.Combine(physicalPath, fileName);
-                var oldPath = $@"{_environment.WebRootPath}{presentationInDb.PresentationPath}";
-
-                System.IO.File.Delete(oldPath);
-
-                using (var stream = new FileStream(fullPath, FileMode.Create))
-                {
-                    await PresentationFile.CopyToAsync(stream);
-                }
-
-                currentPath = $@"{directory}/{fileName}";
-            }
-            if (ModelState.IsValid)
-            {
-                presentationInDb.Title = presentation.Title;
-                presentationInDb.Congress = presentation.Congress;
-                presentationInDb.UpdatedDate = DateTime.Now;
-                presentationInDb.PresentationPath = currentPath;
-                presentationInDb.EditionDate = presentation.EditionDate;
-
-                await _context.SaveChangesAsync();
-
-                presentationInDb.TeacherPresentations.Where(t => t.PresentationId == presentationInDb.Id)
-                .ToList().ForEach(teacher => presentationInDb.TeacherPresentations.Remove(teacher));
-                await _context.SaveChangesAsync();
-                foreach (var teacher in authorList)
-                {
-                    var teacherPresentation = new TeacherPresentation { TeacherId = teacher.Id, PresentationId = presentationInDb.Id, Order = teacher.Order };
-                    _context.TeacherPresentations.Add(teacherPresentation);
-                }
-                await _context.SaveChangesAsync();
+                context.TeacherPresentations.Add(new TeacherPresentation { TeacherId = teacherId, PresentationId = presentationInDb.Id, Order = ++numOrder, Role = Roles.Reader });
             }
 
-            else
-            {
-                ListItems(presentation);
-                return View(presentation);
-            }
+            await context.SaveChangesAsync();
 
-            return RedirectToView();
-
+            return RedirectToPanel();
         }
 
         // POST: /Presentation/Delete
@@ -332,33 +230,35 @@ namespace refca.Features.Presentation
         [ValidateAntiForgeryToken]
         public IActionResult Delete(int id)
         {
-            var userId = _userManager.GetUserId(User);
-            if (userId == null)
-                return View("Error");
+            var userId = userManager.GetUserId(User);
+            var presentationInDb = context.Presentations.FirstOrDefault(t => t.Id == id);
+            var writter = context.TeacherPresentations.FirstOrDefault(a => a.PresentationId == presentationInDb.Id && a.Role == Roles.Writter);
 
-            var presentationInDb = _context.Presentations.SingleOrDefault(t => t.Id == id);
-            if (presentationInDb == null)
-                return View("NotFound");
+            if (presentationInDb == null) return View("NotFound");
+            if (User.IsInRole(Roles.Teacher) && userId != writter.TeacherId) return View("AccessDenied");
 
-            var oldPath = $@"{_environment.WebRootPath}{presentationInDb.PresentationPath}";
+            var filePath = $@"{environment.WebRootPath}{presentationInDb.PresentationPath}";
+            fileProductivitySvc.Remove(filePath);
+            context.Presentations.Remove(presentationInDb);
+            context.SaveChanges();
 
-            if (System.IO.File.Exists(oldPath))
-            {
-                System.IO.File.Delete(oldPath);
-            }
-            _context.Presentations.Remove(presentationInDb);
-            _context.SaveChanges();
-
-            return RedirectToView();
+            return RedirectToPanel();
 
         }
 
         #region helpers
         private void ListItems(PresentationViewModel presentation)
         {
-            presentation.Teachers = _context.TeacherPresentations.Where(b => b.PresentationId == presentation.Id).Select(t => t.Teacher).ToList();
+            presentation.Teachers = context.TeacherPresentations.Where(b => b.PresentationId == presentation.Id).Select(t => t.Teacher).ToList();
         }
 
+        private bool validTeachers(List<string> teacherIds)
+        {
+            var existingTeachers = context.Teachers.Select(i => i.Id).ToList();
+            var teachers = teacherIds.All(t => existingTeachers.Contains(t));
+
+            return teachers;
+        }
         private IActionResult RedirectToView()
         {
             if (User.IsInRole(Roles.Admin))
@@ -431,6 +331,12 @@ namespace refca.Features.Presentation
                 return RedirectToAction(nameof(HomeController.Index), "Home");
             }
 
+        }
+
+        private IActionResult RedirectToPanel()
+        {
+            if (User.IsInRole(Roles.Admin)) return RedirectToAction(nameof(PresentationController.Manage));
+            return RedirectToAction(nameof(PresentationController.List));
         }
         #endregion
     }

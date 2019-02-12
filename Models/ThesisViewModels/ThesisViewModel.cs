@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
+using refca.Resources;
+using refca.Models.CustomModelValidation;
 
 namespace refca.Models.ThesisViewModels
 {
@@ -26,8 +28,8 @@ namespace refca.Models.ThesisViewModels
         [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
         public DateTime PublishedDate { get; set; }
 
-        [Display(Name = "Archivo de tesis")]
-        public IFormFile ThesisFile { get; set; }
+        // [Display(Name = "Archivo de tesis")]
+        // public IFormFile ThesisFile { get; set; }
 
         [Required(ErrorMessage = "El programa educativo es requerido")]
         [Display(Name = "Programa educativo")]

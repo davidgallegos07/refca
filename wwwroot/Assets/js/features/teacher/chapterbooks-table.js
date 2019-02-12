@@ -13,7 +13,7 @@ $(document).ready(function () {
         $table.hide();
         $spinner.show();
         $.ajax({
-            url: '/api/teacherchapterbooks',
+            url: '/api/teacher/chapterbooks',
             data: query,
             success: function (data) {
                 $spinner.hide();

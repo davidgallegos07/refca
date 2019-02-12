@@ -16,54 +16,47 @@
         </div>
         <form asp-controller="Book" asp-action="New" enctype="multipart/form-data" method="post">
             <div class="form-horizontal">
-                <div asp-validation-summary="All" class="text-danger"></div>
+                <div asp-validation-summary="All" class="alert alert-danger"></div>
                 <div class="form-group">
                     <label asp-for="Title" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <input asp-for="Title" class="form-control" />
-                        <span asp-validation-for="Title" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="Abstract" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <textarea asp-for="Abstract" class="form-control" rows="5"></textarea>
-                        <span asp-validation-for="Abstract" class="text-danger"></span>
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="ISBN" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <input asp-for="ISBN" class="form-control" />
-                        <span asp-validation-for="ISBN" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="Edition" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <input asp-for="Edition" class="form-control" />
-                        <span asp-validation-for="Edition" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="PrintLength" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <input asp-for="PrintLength" class="form-control" />
-                        <span asp-validation-for="PrintLength" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="Editorial" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <input asp-for="Editorial" class="form-control" />
-                        <span asp-validation-for="Editorial" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="Genre" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <input asp-for="Genre" class="form-control" />
-                        <span asp-validation-for="Genre" class="text-danger" />
                     </div>
                 </div>
 
@@ -71,7 +64,6 @@
                     <label asp-for="Year" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <input asp-for="Year" class="form-control" />
-                        <span asp-validation-for="Year" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
@@ -80,7 +72,6 @@
                         <div class="input-group date">
                             <input asp-for="EditionDate" class="form-control" /><span class="input-group-addon"><i class="glyphicon glyphicon-th"></i></span>
                         </div>
-                        <span asp-validation-for="EditionDate" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">

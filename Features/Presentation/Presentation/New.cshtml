@@ -16,19 +16,17 @@
         </div>
         <form asp-controller="Presentation" asp-action="New" enctype="multipart/form-data" method="post">
             <div class="form-horizontal">
-                <div asp-validation-summary="All" class="text-danger"></div>
+                <div asp-validation-summary="All" class="alert alert-danger"></div>
                 <div class="form-group">
                     <label asp-for="Title" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <input asp-for="Title" class="form-control" />
-                        <span asp-validation-for="Title" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="Congress" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <input asp-for="Congress" class="form-control" />
-                        <span asp-validation-for="Congress" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
@@ -37,7 +35,6 @@
                         <div class="input-group date">
                             <input asp-for="EditionDate" class="form-control" /><span class="input-group-addon"><i class="glyphicon glyphicon-th"></i></span>
                         </div>
-                        <span asp-validation-for="EditionDate" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">

@@ -32,7 +32,6 @@ export class TeachersDetailsComponent implements OnInit, OnDestroy {
 	public presearch = [];
 	public ptheses = [];
 	loading: boolean = true;
-	test: boolean = false;
 	private sub: Subscription;
 	constructor(private _route: ActivatedRoute, private teacherSvc: TeacherService, private _router: Router) { }
 

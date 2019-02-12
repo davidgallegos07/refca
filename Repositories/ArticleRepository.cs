@@ -78,7 +78,7 @@ namespace refca.Repositories
             result.TotalItems = await query.CountAsync();
 
             query = query.ApplyPaging(queryObj);
-            
+
             await query.ForEachAsync(article => article.TeacherArticles = article.TeacherArticles.OrderBy(o => o.Order).ToList());
 
             result.Items = await query.ToListAsync();

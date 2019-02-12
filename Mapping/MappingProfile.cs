@@ -8,6 +8,14 @@ using refca.Resources.QueryResources;
 using refca.Resources.TeacherQueryResources;
 using refca.Models.ArticleViewModels;
 using refca.Models.BookViewModels;
+using refca.Models.ChapterbookViewModels;
+using refca.Models.ResearchViewModels;
+using refca.Models.PresentationViewModels;
+using refca.Models.MagazineViewModels;
+using refca.Models.ThesisViewModels;
+using refca.Models.TeacherViewModels;
+
+using System;
 
 namespace refca.Mapping
 {
@@ -15,9 +23,17 @@ namespace refca.Mapping
     {
         public MappingProfile()
         {
-            CreateMap<Article, ArticleViewModel>().ReverseMap();
+
+            CreateMap<ArticleViewModel, Article>().ReverseMap();
+            CreateMap<ChapterbookViewModel, Chapterbook>().ReverseMap();
             CreateMap<Book, BookViewModel>().ReverseMap();
-                            
+            CreateMap<Research, ResearchViewModel>().ReverseMap();
+            CreateMap<Presentation, PresentationViewModel>().ReverseMap();
+            CreateMap<Magazine, MagazineViewModel>().ReverseMap();
+            CreateMap<Thesis, ThesisViewModel>().ReverseMap();
+            CreateMap<Teacher, TeacherViewModel>().ReverseMap();
+
+
             CreateMap<Teacher, TeacherResource>();
             CreateMap<Thesis, ThesisResource>();
             CreateMap<Research, ResearchResource>();
@@ -30,14 +46,14 @@ namespace refca.Mapping
             CreateMap<AcademicBody, AcademicBodyResource>();
             CreateMap<KnowledgeArea, KnowledgeAreaResource>();
             CreateMap<ConsolidationGrade, ConsolidationGradeResource>();
-            
+
             CreateMap<Thesis, TeacherThesisResource>();
             CreateMap<Research, TeacherResearchResource>();
             CreateMap<Book, TeacherBookResource>();
             CreateMap<Chapterbook, TeacherChapterbookResource>();
             CreateMap<Article, TeacherArticleResource>();
             CreateMap<Magazine, TeacherMagazineResource>();
-            
+
             CreateMap<ResearchQueryResource, ResearchQuery>();
             CreateMap<ArticleQueryResource, ArticleQuery>();
             CreateMap<PresentationQueryResource, PresentationQuery>();
@@ -46,7 +62,7 @@ namespace refca.Mapping
             CreateMap<MagazineQueryResource, MagazineQuery>();
             CreateMap<ChapterbookQueryResource, ChapterbookQuery>();
             CreateMap<TeacherQueryResource, TeacherQuery>();
-            
+
             CreateMap<TeacherArticleQueryResource, ArticleQuery>();
             CreateMap<TeacherPresentationQueryResource, PresentationQuery>();
             CreateMap<TeacherThesisQueryResource, ThesisQuery>();
@@ -75,15 +91,15 @@ namespace refca.Mapping
             CreateMap<Magazine, MagazineResource>()
                 .ForMember(dto => dto.TeacherMagazines, opt => opt.MapFrom(s => s.TeacherMagazines.Select(t => t.Teacher)));
 
-             CreateMap<Thesis, TeacherThesisResource>()
-                .ForMember(dto => dto.TeacherTheses, opt => opt.MapFrom(s => s.TeacherTheses.Select(t => t.Teacher)));
+            CreateMap<Thesis, TeacherThesisResource>()
+               .ForMember(dto => dto.TeacherTheses, opt => opt.MapFrom(s => s.TeacherTheses.Select(t => t.Teacher)));
             CreateMap<Research, TeacherResearchResource>()
                 .ForMember(dto => dto.TeacherResearch, opt => opt.MapFrom(s => s.TeacherResearch.Select(t => t.Teacher)));
             CreateMap<Chapterbook, TeacherChapterbookResource>()
                 .ForMember(dto => dto.TeacherChapterbooks, opt => opt.MapFrom(s => s.TeacherChapterbooks.Select(t => t.Teacher)));
             CreateMap<Book, TeacherBookResource>()
                 .ForMember(dto => dto.TeacherBooks, opt => opt.MapFrom(s => s.TeacherBooks.Select(t => t.Teacher)));
-            CreateMap<Article, TeacherArticleResource>()    
+            CreateMap<Article, TeacherArticleResource>()
                 .ForMember(dto => dto.TeacherArticles, opt => opt.MapFrom(s => s.TeacherArticles.Select(t => t.Teacher)))
             .ForMember(dto => dto.Role, opt => opt.MapFrom(r => r.TeacherArticles.Where(i => i.TeacherId == i.Article.Owner).Select(x => x.Role).First()));
             CreateMap<Presentation, TeacherPresentationResource>()
