@@ -1,7 +1,7 @@
-@model AdminViewModel
+@model 
 
 @{
-    ViewData["Title"] = "  ";
+    ViewData["Title"] = "Nuevo Cuerpo Academico";
 }
 
 <div id="wrapper">
@@ -14,26 +14,28 @@
             </div>
 
         </div>
-        <form asp-controller="Admin" asp-action="New" asp-route-returnurl="@ViewData["ReturnUrl"]" method="post" class="form-horizontal">
+        <form asp-controller="AcademicBodies" asp-action="New" asp-route-returnurl="@ViewData["ReturnUrl"]" method="post" class="form-horizontal">
             <div asp-validation-summary="All" class="alert alert-danger"></div>
             <div class="form-group">
-                <label asp-for="Email" class="col-md-2 control-label"></label>
+                <label asp-for="Name" class="col-md-2 control-label"></label>
                 <div class="col-md-10">
-                    <input asp-for="Email" class="form-control" />
+                    <input asp-for="Name" class="form-control" />
                 </div>
             </div>
             <div class="form-group">
-                <label asp-for="Password" class="col-md-2 control-label"></label>
+                <label asp-for="PromepCode" class="col-md-2 control-label"></label>
                 <div class="col-md-10">
-                    <input asp-for="Password" class="form-control" />
+                    <input asp-for="PromepCode" class="form-control" />
                 </div>
             </div>
             <div class="form-group">
-                <label asp-for="ConfirmPassword" class="col-md-2 control-label"></label>
+                <label asp-for="ConsolidationGradeId" class="col-md-2 control-label"></label>
                 <div class="col-md-10">
-                    <input asp-for="ConfirmPassword" class="form-control" />
-                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                    <select asp-for="ConsolidationGradeId" asp-items="@ViewBag.ConsolidationGradeId"class="form-control"></select>
                 </div>
+            </div>
+
+
             </div>
             <div class="form-group">
                 <div class="col-md-offset-2 col-md-10">
@@ -46,4 +48,4 @@
 @section Scripts {
     @{ await Html.RenderPartialAsync("_Administration");}
     @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
-} q
+} 

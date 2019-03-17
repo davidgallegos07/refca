@@ -7,12 +7,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using refca.Data;
 using refca.Models;
-using refca.Models.TeacherViewModels;
+using refca.Models.AcademicBodyViewModels;
 using refca.Features.Home;
 using refca.Models.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using refca.Models.AdminViewModels;
+
 
 namespace refca.Features.AcademicBodies
 {
@@ -53,6 +54,20 @@ namespace refca.Features.AcademicBodies
             var academicBodies = await _context.AcademicBodies.ToListAsync();
 
             return View(academicBodies);
+        }
+
+        //GET : /AcademicBodies/New
+        [HttpGet] 
+        [Authorize(Roles=Roles.Admin)]
+        public IActionResult New (string returnUrl=null)
+        {
+            ViewData["ReturnUrl"]=returnUrl;
+
+            var userID= _userManager.GetUserId(User);
+            if(userID==null) return View("Error");
+
+            ViewBag.ConsolidationGradeId = new SelectList(_context.ConsolidationGrades, "Id", "Name");
+            return View();
         }
 
 
