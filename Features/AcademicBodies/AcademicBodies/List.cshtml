@@ -1,7 +1,7 @@
 ﻿@model IEnumerable<AcademicBody>
 
 @{
-    ViewData["Title"] = "Cuerpos Academicos";
+    ViewData["Title"] = "Cuerpos académicos";
 }
 
 <div id="wrapper">
@@ -24,15 +24,15 @@
                             <i class="fa fa-plus" aria-hidden="true"></i>
                             </a>
                         </div>
-                        </div>
+                        
                         <div class="table-responsive">
                         <table class="table table-striped table-bordered table-hover">
                             <thead>
                                 <tr>
-                                    <th>Id</th>
-                                    <th>Name</th>
-                                    <th>PromepCode</th>
-                                    <th>ConsolidationGradeID</th>
+                                    
+                                    <th>Nombre</th>
+                                    <th>Código Promep</th>
+                                    <th>Grado de consolidación</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
@@ -40,10 +40,10 @@
                                 @foreach (var AcademicBody in Model)
                                 {
                                     <tr>
-                                        <td>@AcademicBody.Id</td>
+                                        
                                         <td>@AcademicBody.Name</td>
                                         <td>@AcademicBody.PromepCode</td>
-                                        <td>@AcademicBody.ConsolidationGradeId</td>
+                                        <td>@AcademicBody.ConsolidationGrade.Name</td>
                                         <td>
                   
                                            <a asp-controller="AcademicBodies" asp-action="Edit" asp-route-id="@AcademicBody.Id" class="btn btn-sm btn-info"
