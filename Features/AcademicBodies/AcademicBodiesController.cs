@@ -15,13 +15,9 @@ using refca.Models.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-
-
 namespace refca.Features.AcademicBodies
 {
     public class AcademicBodiesController : Controller
-
-
     {
             private readonly RefcaDbContext _context;
             private readonly SignInManager<ApplicationUser> _signInManager;
@@ -70,8 +66,6 @@ namespace refca.Features.AcademicBodies
         [Authorize(Roles = Roles.Admin)]
         public IActionResult New (string returnUrl = null)
         {
-
-
             ViewData["ReturnUrl"] = returnUrl;
 
             var userID = _userManager.GetUserId(User);
@@ -112,7 +106,6 @@ namespace refca.Features.AcademicBodies
             }
             ListItems(model);
             return View(model);
-        
         }
 
         // POST: /AcademicBodies/Delete
@@ -158,7 +151,6 @@ namespace refca.Features.AcademicBodies
             };
 
             return View(model);
-
         }
 
         // POST: /AcademicBodies/Edit
@@ -194,22 +186,16 @@ namespace refca.Features.AcademicBodies
             }
 
             return RedirectToAction(nameof(AcademicBodiesController.List));
-
-
         }
-
         #region helpers
         private void ListItems(AcademicBodyViewModel academicBody)
         {
              ViewBag.ConsolidationGradeId = new SelectList(_context.ConsolidationGrades, "Id", "Name", academicBody.ConsolidationGradeId);
         }
-
         private void ListItemsEdit(EditAcademicBodyViewModel academicBody)
         {
              ViewBag.ConsolidationGradeId = new SelectList(_context.ConsolidationGrades, "Id", "Name", academicBody.ConsolidationGradeId);
         }
-
-
         #endregion
     }
 

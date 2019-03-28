@@ -19,7 +19,5 @@ namespace refca.Models.AcademicBodyViewModels
         [Required(ErrorMessage = "El grado de consolidación es requerido")]
         [Display(Name = "Grado de consolidación")]
         public byte ConsolidationGradeId {get; set;}
-
-
     }
 }

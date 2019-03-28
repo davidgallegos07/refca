@@ -7,7 +7,7 @@ namespace refca.Models.AcademicBodyViewModels
     public class EditAcademicBodyViewModel
     {
         [Required(ErrorMessage = "El nombre del cuerpo académico es requerido")]
-        [StringLength(100, ErrorMessage="Mínimo {2} caracteres, Máximo {1} caracteres", MinimumLength = 2)]
+        [StringLength(100, ErrorMessage = "Mínimo {2} caracteres, Máximo {1} caracteres", MinimumLength = 2)]
         [Display(Name = "Nombre")]
         public string Name {get; set;}
 
@@ -19,7 +19,6 @@ namespace refca.Models.AcademicBodyViewModels
         [Required(ErrorMessage = "El grado de consolidación es requerido")]
         [Display(Name = "Grado de consolidación")]
         public byte ConsolidationGradeId {get; set;}
-
         public int Id {get ; set;}
     }
 }
