@@ -25,6 +25,6 @@ namespace refca.Api
         {
             var academicBodies = await _context.AcademicBodies.ToListAsync();
             return mapper.Map<IEnumerable<AcademicBodyResource>>(academicBodies);
-        }        
+        }
     }
 }
