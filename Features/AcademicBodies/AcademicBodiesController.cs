@@ -42,7 +42,7 @@ namespace refca.Features.AcademicBodies
             )
         {
             _context = context;
-            _environment =environment;
+            _environment = environment;
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
@@ -51,11 +51,11 @@ namespace refca.Features.AcademicBodies
         }
 
         //GET : /AcademicBodies/List
-        [Authorize(Roles=Roles.Admin)]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> List(){
 
-             var userId= _userManager.GetUserId(User);
-             if(userId==null) return View("Error");
+             var userId = _userManager.GetUserId(User);
+             if(userId == null) return View("Error");
 
             var academicBodies = await _context.AcademicBodies
                 .Include(c=>c.ConsolidationGrade)
@@ -67,15 +67,15 @@ namespace refca.Features.AcademicBodies
 
         //GET : /AcademicBodies/New
         [HttpGet] 
-        [Authorize(Roles=Roles.Admin)]
-        public IActionResult New (string returnUrl=null)
+        [Authorize(Roles = Roles.Admin)]
+        public IActionResult New (string returnUrl = null)
         {
 
 
-            ViewData["ReturnUrl"]=returnUrl;
+            ViewData["ReturnUrl"] = returnUrl;
 
-            var userID= _userManager.GetUserId(User);
-            if(userID==null) return View("Error");
+            var userID = _userManager.GetUserId(User);
+            if(userID == null) return View("Error");
 
             ViewBag.ConsolidationGradeId = new SelectList(_context.ConsolidationGrades, "Id", "Name");
             return View();
@@ -84,13 +84,13 @@ namespace refca.Features.AcademicBodies
         //POST : /AcademicBodies/New
         [HttpPost] 
         [ValidateAntiForgeryToken]
-        [Authorize(Roles=Roles.Admin)]
-        public async Task<IActionResult> New (AcademicBodyViewModel model, string returnUrl=null)
+        [Authorize(Roles = Roles.Admin)]
+        public async Task<IActionResult> New (AcademicBodyViewModel model, string returnUrl = null)
         {
             ViewData["ReturnUrl"]=returnUrl;
             
-            var userId= _userManager.GetUserId(User);
-            if(userId==null) return View("Error");
+            var userId = _userManager.GetUserId(User);
+            if(userId == null) return View("Error");
 
             var consolidationGrade = _context.ConsolidationGrades.SingleOrDefault(c => c.Id == model.ConsolidationGradeId);
 
@@ -101,9 +101,9 @@ namespace refca.Features.AcademicBodies
             {
                   var academicBodies = new Models.AcademicBody
                   {
-                       Name= model.Name,
-                        PromepCode= model.PromepCode,
-                        ConsolidationGradeId=model.ConsolidationGradeId    
+                       Name = model.Name,
+                        PromepCode = model.PromepCode,
+                        ConsolidationGradeId = model.ConsolidationGradeId    
                    };
 
                 _context.Add(academicBodies);
@@ -118,15 +118,15 @@ namespace refca.Features.AcademicBodies
         // POST: /AcademicBodies/Delete
         [HttpPost] 
         [ValidateAntiForgeryToken]
-        [Authorize(Roles=Roles.Admin)]
+        [Authorize(Roles = Roles.Admin)]
         public  IActionResult Delete ( int id)
         {
-            var userId= _userManager.GetUserId(User);
-            if(userId==null) return View("Error");
+            var userId = _userManager.GetUserId(User);
+            if(userId == null) return View("Error");
             
             var academicBodiesInDb = _context.AcademicBodies.FirstOrDefault(a => a.Id == id);
             
-            if(academicBodiesInDb==null) return View("NotFound");
+            if(academicBodiesInDb == null) return View("NotFound");
 
            _context.AcademicBodies.Remove(academicBodiesInDb);
            _context.SaveChanges();
@@ -136,23 +136,23 @@ namespace refca.Features.AcademicBodies
 
         //GET : /AcademicBodies/Edit
         [Authorize(Roles=Roles.Admin)]
-        public async Task<IActionResult> Edit (int id , string returnUrl=null)
+        public async Task<IActionResult> Edit (int id , string returnUrl = null)
         {
-            ViewData["ReturnUrl"]=returnUrl;
+            ViewData["ReturnUrl"] = returnUrl;
 
-            var userId= _userManager.GetUserId(User);
-            if(userId==null) return View("Error");
+            var userId = _userManager.GetUserId(User);
+            if(userId == null) return View("Error");
           
             var academicBodiesInDb = await _context.AcademicBodies.SingleOrDefaultAsync(a=> a.Id == id);
-            if (academicBodiesInDb==null)
+            if (academicBodiesInDb == null)
                 return View("Error");
 
             ViewBag.ConsolidationGradeId = new SelectList(_context.ConsolidationGrades, "Id", "Name");
 
             var model = new EditAcademicBodyViewModel
             {
-                Id=academicBodiesInDb.Id,
-                Name= academicBodiesInDb.Name,
+                Id = academicBodiesInDb.Id,
+                Name = academicBodiesInDb.Name,
                 PromepCode = academicBodiesInDb.PromepCode,
                 ConsolidationGradeId = academicBodiesInDb.ConsolidationGradeId
             };
@@ -164,14 +164,14 @@ namespace refca.Features.AcademicBodies
         // POST: /AcademicBodies/Edit
         [HttpPost] 
         [ValidateAntiForgeryToken]
-        [Authorize(Roles=Roles.Admin)]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> Edit (EditAcademicBodyViewModel model)
         {
-            var userId= _userManager.GetUserId(User);
-            if(userId==null) return View("Error");
+            var userId = _userManager.GetUserId(User);
+            if(userId == null) return View("Error");
 
             var academicBodiesInDb = await _context.AcademicBodies.SingleOrDefaultAsync(a=> a.Id == model.Id);
-            if (academicBodiesInDb==null)
+            if (academicBodiesInDb == null)
                 return View("Error");
 
             var consolidationGrade = _context.ConsolidationGrades.SingleOrDefault (c => c.Id==model.ConsolidationGradeId);
@@ -181,9 +181,9 @@ namespace refca.Features.AcademicBodies
 
             if(ModelState.IsValid)
             {
-                 academicBodiesInDb.Name=model.Name;
-                 academicBodiesInDb.PromepCode=model.PromepCode;
-                 academicBodiesInDb.ConsolidationGradeId=model.ConsolidationGradeId;
+                 academicBodiesInDb.Name = model.Name;
+                 academicBodiesInDb.PromepCode = model.PromepCode;
+                 academicBodiesInDb.ConsolidationGradeId = model.ConsolidationGradeId;
 
                  await _context.SaveChangesAsync();
             }
