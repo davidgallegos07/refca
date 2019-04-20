@@ -25,7 +25,10 @@
                     <td>{{a?.issn}}</td>
                     <td>{{a?.editionDate | date}}</td>
                     <td>
-                        <a target="_blank" href="{{a?.articlePath}}"><i class="fa fa-download"></i> 
+                        <a target="_blank" *ngIf="a?.articlePath != null" href="{{a?.articlePath}}"><i class="fa fa-download"></i> 
+                            <span>Descargar</span> 
+                        </a>
+                        <a target="_blank" *ngIf="a?.articlePath == null" style="color:gray; pointer-events: none;"><i class="fa fa-download"></i> 
                             <span>Descargar</span> 
                         </a>
                     </td>

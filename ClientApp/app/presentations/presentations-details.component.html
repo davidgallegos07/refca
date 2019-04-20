@@ -20,7 +20,8 @@
                 <div class="divider"></div>
                 <div class="col-md-6"><strong>Archivo</strong></div>
                 <div class="col-md-6">
-                    <a target="_blank" href="{{pdetails?.presentationPath}}"><i class="fa fa-download"></i> Descargar</a>
+                    <a target="_blank" *ngIf="pdetails?.presentationPath != null" href="{{pdetails?.presentationPath}}"><i class="fa fa-download"></i> Descargar</a>
+                    <a target="_blank" *ngIf="pdetails?.presentationPath == null" style="color:gray; pointer-events: none;" ><i class="fa fa-download"></i> Descargar</a>
                 </div>
             </div>
             <div class="col-md-12">

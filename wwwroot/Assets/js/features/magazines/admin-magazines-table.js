@@ -74,13 +74,13 @@ $(document).ready(function () {
         var path = $(this).find('.path').text();
         var existPath = (path != 'null') ? "none" : "disabled-item";        
         var approved = $(this).find('.approved').text();
-        var isApproved = (approved === 'true') ? "No aprobar" : "Aprobar";
+        var isApproved = (approved === 'true') ? "Desaprobar" : "Aprobar";
         $('tr').removeClass('success');
         $(this).addClass('success');
         dropdownActions.empty();
         data = `
         <li><a href="/Magazine/Edit/${id}">Editar</a></li>
-        <li class="${existPath}"><a target="_blank" href="${path}">Download</a></li>        
+        <li class="${existPath}"><a target="_blank" href="${path}">Descargar</a></li>        
         <li>
             <form action="/Magazine/Delete/${id}" method="post" class="js-delete">
                 <button class="btn-block" type="submit">Eliminar</button>
@@ -95,6 +95,7 @@ $(document).ready(function () {
         </li>
             `
         dropdownActions.append(data);
+        $(".disabled-item").remove();
     });
 
     $('#search-box').keypress(function (e) {

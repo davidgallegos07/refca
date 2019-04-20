@@ -32,7 +32,8 @@
                 </li>
                 <li class="list-group-item text-right">
                     <span class="pull-left">Curriculum</span>
-                    <a target="_blank" href="{{teacher?.cvPath}}"><i class="fa fa-download"></i> Descargar</a>
+                    <a target="_blank" *ngIf="teacher?.cvPath != null" href="{{teacher?.cvPath}}"><i class="fa fa-download"></i> Descargar</a>
+                    <a target="_blank" *ngIf="teacher?.cvPath == null" style="color:gray; pointer-events: none;" ><i class="fa fa-download"></i> Descargar</a>
                 </li>
             </ul>
             <ul class="list-group">

@@ -23,8 +23,11 @@
                     <td>{{t?.studentName}}</td>
                     <td>{{t?.publishedDate | date}}</td>
                     <td>
-                        <a target="_blank" href="{{t?.thesisPath}}"><i class="fa fa-download"></i> 
+                        <a target="_blank" *ngIf="t?.thesisPath != null" href="{{t?.thesisPath}}"><i class="fa fa-download"></i> 
                                     <span>Descargar</span> 
+                        </a>
+                        <a target="_blank" *ngIf="t?.thesisPath == null" style="color:gray; pointer-events: none;"><i class="fa fa-download"></i> 
+                            <span>Descargar</span> 
                         </a>
                     </td>
                     <td>

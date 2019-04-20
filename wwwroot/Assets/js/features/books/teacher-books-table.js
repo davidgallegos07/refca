@@ -64,17 +64,18 @@ $(document).ready(function () {
     $(tbody).on('click', 'tr', function () {
         var id = $(this).find('.id').text();
         var path = $(this).find('.path').text();
+        var existPath = (path != 'null') ? "none" : "disabled-item";  
         $('tr').removeClass('success');
         $(this).addClass('success');
         $.ajax({
             url: `/api/teacher/books/${id}/role`,
             success: function (role) {
                 dropdownActions.empty();
-                var authorized = (role == 'WRITTER') ? "none" : "disabled disabled-item";
+                var authorized = (role == 'WRITTER') ? "none" : "disabled-item";
                 data = `
                 <li class="${authorized}"><a href="/Book/Edit/${id}">Editar</a></li>
-                <li class="${authorized}"><a href="/Book/Upload/${id}">Upload</a></li>
-                <li><a target="_blank" href="${path}">Download</a></li>
+                <li class="${authorized}"><a href="/Book/Upload/${id}">Añadir PDF</a></li>
+                <li class="${existPath}"><a target="_blank" href="${path}">Descargar</a></li>
                         <li class="${authorized}">
                         <form action="/Book/Delete/${id}" method="post" class="js-delete">
                             <button class="btn-block" type="submit">Eliminar</button>
