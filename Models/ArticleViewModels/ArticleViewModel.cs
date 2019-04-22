@@ -13,12 +13,12 @@ namespace refca.Models.ArticleViewModels
         public int Id { get; set; }
 
         [Required(ErrorMessage = "El título es requerido")]
-        [StringLength(100, ErrorMessage = "Minimo {2} caracteres, Maximo {1} caracteres", MinimumLength = 3)]
+        [StringLength(100, ErrorMessage = "Minimo {2} caracteres, Máximo {1} caracteres", MinimumLength = 3)]
         [Display(Name = "Título")]
         public string Title { get; set; }
 
         [Required(ErrorMessage = "El título de revista es requerido")]
-        [StringLength(100, ErrorMessage = "Minimo {2} caracteres, Maximo {1} caracteres", MinimumLength = 3)]
+        [StringLength(100, ErrorMessage = "Minimo {2} caracteres, Máximo {1} caracteres", MinimumLength = 3)]
         [Display(Name = "Título de revista")]
         public string Magazine { get; set; }
 

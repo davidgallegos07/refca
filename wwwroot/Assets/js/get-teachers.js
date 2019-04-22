@@ -69,7 +69,7 @@
         var id = $(this).attr('id');
         var box = this;
         bootbox.dialog({
-            message: "¿Estas seguro que quieres eliminar este elemento?",
+            message: "¿Estás seguro que quieres eliminar este elemento?",
             title: "Confirmación",
             buttons: {
                 no: {

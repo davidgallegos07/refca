@@ -19,7 +19,7 @@
 
 div.profile-banner {
     margin-top: 20px;
-    height: 450px;
+    height: 350px;
     padding-top: 80px;
     background-color: #d2b349;
     border-bottom: 2px solid;
@@ -41,4 +41,8 @@ h1.profile-banner {
 }
 .nav{
     margin-bottom: 10px;    
+}
+.img-thumbnail{
+    height: 100px;
+    width: 100px;
 }

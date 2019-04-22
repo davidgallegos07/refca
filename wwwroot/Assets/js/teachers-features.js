@@ -11,7 +11,7 @@
 
     $("#js-cancel-action").click(function () {
         bootbox.dialog({
-            message: "¿Estas seguro que quieres eliminar este elemento?",
+            message: "¿Estás seguro que quieres eliminar este elemento?",
             title: "Confirmación",
             buttons: {
                 no: {

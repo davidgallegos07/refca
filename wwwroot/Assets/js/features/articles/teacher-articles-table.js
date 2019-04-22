@@ -45,8 +45,8 @@ $(document).ready(function () {
                 pagination.twbsPagination($.extend({}, defaultOpts, {
                     startPage: currentPage,
                     totalPages: totalPages,
-                    first: 'primera',
-                    last: 'ultima',
+                    first: 'Primera',
+                    last: 'Última',
                     prev: '<span aria-hidden="true">&laquo;</span>',
                     next: '<span aria-hidden="true">&raquo;</span>',
                     initiateStartPageClick: false,

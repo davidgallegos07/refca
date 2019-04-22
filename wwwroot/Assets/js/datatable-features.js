@@ -3,7 +3,7 @@
         var currentForm = this; 
         e.preventDefault();
         bootbox.dialog({
-            message: "¿Estas seguro que quieres eliminar este elemento?",
+            message: "¿Estás seguro que quieres eliminar este elemento?",
             title: "Confirmación",
             buttons: {
                 no: {
@@ -28,7 +28,7 @@
         var currentForm = this;
         e.preventDefault();
         bootbox.dialog({
-            message: "¿Estas seguro que quieres modificar el estado de este elemento?",
+            message: "¿Estás seguro que quieres modificar el estado de este elemento?",
             title: "Confirmación",
             buttons: {
                 no: {

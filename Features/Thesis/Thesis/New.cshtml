@@ -18,31 +18,31 @@
                 <div asp-validation-summary="All" class="alert alert-danger"></div>
                 <div class="form-group">
                     <label asp-for="Title" class="col-md-2 control-label"></label>
-                    <div class="col-md-10">
+                    <div class="col-md-8">
                         <input asp-for="Title" class="form-control" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="StudentName" class="col-md-2 control-label"></label>
-                    <div class="col-md-10">
+                    <div class="col-md-8">
                         <input asp-for="StudentName" class="form-control" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="EducationProgramId" class="col-md-2 control-label"></label>
-                    <div class="col-md-10">
+                    <div class="col-md-8">
                         <select asp-for="EducationProgramId" asp-items="@ViewBag.EducationProgramId" class="form-control"></select>
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="ResearchLineId" class="col-md-2 control-label"></label>
-                    <div class="col-md-10">
+                    <div class="col-md-8">
                         <select asp-for="ResearchLineId" asp-items="@ViewBag.ResearchLineId" class="form-control"></select>
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="PublishedDate" class="col-md-2 control-label"></label>
-                    <div class="col-md-10">
+                    <div class="col-md-8">
                         <div class="input-group date">
                             <input asp-for="PublishedDate" class="form-control" /><span class="input-group-addon"><i class="glyphicon glyphicon-th"></i></span>
                         </div>
@@ -50,18 +50,18 @@
                 </div>
                 <div class="form-group">
                     <label class="col-md-2 control-label">Autor(es)</label>
-                    <div class="col-md-10">
+                    <div class="col-md-8">
                         <input id="teacher" class="typeahead form-control" type="text" placeholder="Docente...">
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="col-md-2 control-label"></label>
-                    <div class="col-md-10">
+                    <div class="col-md-8">
                         <div id="teachers"></div>
                     </div>
                 </div>
                 <div class="form-group">
-                    <div class="col-md-offset-2 col-md-10">
+                    <div class="col-md-offset-2 col-md-8">
                         <button type="submit" class="btn btn-success">Guardar</button>
                     </div>
                 </div>
