@@ -33,8 +33,11 @@
                     <td>{{b?.printLength}}</td>
                     <td>{{b?.genre}}</td>
                     <td>
-                        <a target="_blank" href="{{b?.bookPath}}"><i class="fa fa-download"></i>
+                        <a target="_blank" *ngIf="b?.bookPath != null" href="{{b?.bookPath}}"><i class="fa fa-download"></i>
                             <span>Descargar</span>
+                        </a>
+                        <a target="_blank" *ngIf="b?.bookPath == null" style="color:gray; pointer-events: none;"><i class="fa fa-download"></i> 
+                            <span>Descargar</span> 
                         </a>
                     </td>
                     <td>

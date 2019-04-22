@@ -31,8 +31,11 @@
                     <td>{{r?.initialPeriod}}</td>
                     <td>{{r?.finalPeriod}}</td>
                     <td>
-                        <a target="_blank" href="{{r?.researchPath}}"><i class="fa fa-download"></i> 
+                        <a target="_blank" *ngIf="r?.researchPath != null" href="{{r?.researchPath}}"><i class="fa fa-download"></i> 
                                     <span>Descargar</span> 
+                        </a>
+                        <a target="_blank" *ngIf="r?.researchPath == null" style="color:gray; pointer-events: none;"><i class="fa fa-download"></i> 
+                            <span>Descargar</span> 
                         </a>
                     </td>
                     <td>

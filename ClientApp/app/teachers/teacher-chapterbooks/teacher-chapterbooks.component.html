@@ -27,7 +27,10 @@
                     <td>{{c?.publishedDate | date}}</td>
                     <td>{{c?.editorial}}</td>
                     <td>
-                        <a target="_blank" href="{{c?.chapterbookPath}}"><i class="fa fa-download"></i> 
+                        <a target="_blank"  *ngIf="c?.chapterbookPath != null" href="{{c?.chapterbookPath}}"><i class="fa fa-download"></i> 
+                            <span>Descargar</span> 
+                        </a>
+                        <a target="_blank" *ngIf="c?.chapterbookPath == null" style="color:gray; pointer-events: none;"><i class="fa fa-download"></i> 
                             <span>Descargar</span> 
                         </a>
                     </td>

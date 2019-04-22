@@ -83,8 +83,8 @@ $(document).ready(function () {
                 console.log(path);
                 data = `
                 <li class="${authorized}"><a href="/Magazine/Edit/${id}">Editar</a></li>
-                <li class="${authorized}"><a href="/Magazine/Upload/${id}">Upload</a></li>
-                <li class="${existPath}"><a target="_blank" href="${path}">Download</a></li>
+                <li class="${authorized}"><a href="/Magazine/Upload/${id}">Añadir PDF</a></li>
+                <li class="${existPath}"><a target="_blank" href="${path}">Descargar</a></li>
                     <li class="${authorized}">
                         <form action="/Magazine/Delete/${id}" method="post" class="js-delete">
                             <button class="btn-block" type="submit">Eliminar</button>
