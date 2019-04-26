@@ -1,44 +1,38 @@
 ﻿<ng2-toasty [position]="'bottom-right'"></ng2-toasty>
 <div *ngIf="article" class="panel panel-default container">
-    <div class="panel-body">
-        <div class="row">
-            <div class="panel-title">
-                <div class="col-md-12">
-                    <h3>{{article?.title}}</h3>
-                </div>
-            </div>
-            <div class="col-md-12">
-                <div class="col-md-6"><strong>Revista</strong></div>
-                <div class="col-md-6">{{article?.magazine}}</div>
-            </div>
-                           
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>ISSN</strong></div>
-                <div class="col-md-6">{{article?.issn}}</div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Fecha de edición</strong></div>
-                <div class="col-md-6">{{article?.editionDate | date}}</div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Archivo</strong></div>
-                <div class="col-md-6">
-                    <a target="_blank" *ngIf="article?.articlePath != null"  href="{{article?.articlePath}}"><i class="fa fa-download"></i> Descargar</a>
-                    <a target="_blank" *ngIf="article?.articlePath == null" style="color:gray; pointer-events: none;"><i class="fa fa-download"></i> Descargar</a>
-                </div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Autor(es)</strong></div>
-                <div class="col-md-6">
-                    <div *ngFor="let teacher of article?.teacherArticles">
-                        {{teacher.name}}
-                    </div>
-                </div>
-            </div>
+<div class="container">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h2>{{article?.title}}</h2>
+        </div>
+        <div class="panel-body">
+            <table class="table table-striped">
+                <tbody>
+                    <tr>
+                        <th>Revista</th>
+                        <td>{{article?.magazine}}</td>
+                    </tr>
+                    <tr>
+                        <th>ISSN</th>
+                        <td>{{article?.issn}}</td>
+                    </tr>
+                    <tr>
+                        <th>Fecha de edición</th>
+                        <td>{{article?.editionDate | date}}</td>
+                    </tr>
+                    <tr>
+                        <th>Archivo</th>
+                        <td><a target="_blank" *ngIf="article?.articlePath != null" href="{{article?.articlePath}}"><i class="fa fa-download"></i> Descargar</a>
+                            <a target="_blank" *ngIf="article?.articlePath == null" style="color:gray; pointer-events: none;"><i class="fa fa-download"></i> Descargar</a></td>
+                    </tr>
+                    <tr>
+                        <th>Autor(es)</th>
+                        <td *ngFor="let teacher of article?.teacherArticles">
+                            {{teacher.name}}</td>
+                    </tr>
+                </tbody>
+            </table>
+          </div>
         </div>
     </div>
 </div>

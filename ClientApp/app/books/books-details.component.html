@@ -1,63 +1,51 @@
-﻿<div class="panel panel-default container">
-    <div class="panel-body">
-        <div class="row">
-            <div class="panel-title">
-                <div class="col-md-12">
-                    <h3>{{bdetails?.title}}</h3>
-                </div>
+﻿<div class="container">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h2>{{bdetails?.title}}</h2>
             </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>ISBN</strong></div>
-                <div class="col-md-6">{{bdetails?.isbn}}</div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Edición</strong></div>
-                <div class="col-md-6">{{bdetails?.edition}}</div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Fecha de edición</strong></div>
-                <div class="col-md-6">{{bdetails?.editionDate | date}}</div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Editorial</strong></div>
-                <div class="col-md-6">{{bdetails?.editorial}}</div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Año</strong></div>
-                <div class="col-md-6">{{bdetails?.year}}</div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Paginas</strong></div>
-                <div class="col-md-6">{{bdetails?.printLength}}</div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Género</strong></div>
-                <div class="col-md-6">{{bdetails?.genre}}</div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Archivo</strong></div>
-                <div class="col-md-6">
-                    <a target="_blank" *ngIf="bdetails?.bookPath != null" href="{{bdetails?.bookPath}}"><i class="fa fa-download"></i>Descargar</a>
-                    <a target="_blank" *ngIf="bdetails?.bookPath == null" style="color:gray; pointer-events: none;"><i class="fa fa-download"></i>Descargar</a>
-                </div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Autor(es)</strong></div>
-                <div class="col-md-6">
-                    <div *ngFor="let teacher of bdetails?.teacherBooks">
-                        {{teacher.name}}
-                    </div>
-                </div>
+            <div class="panel-body">
+                <table class="table table-striped">
+                    <tbody>
+                        <tr>
+                            <th>ISBN</th>
+                            <td>{{bdetails?.isbn}}</td>
+                        </tr>
+                        <tr>
+                            <th>Edición</th>
+                            <td>{{bdetails?.edition}}</td>
+                        </tr>
+                        <tr>
+                            <th>Fecha de edición</th>
+                            <td>{{bdetails?.editionDate | date}}</td>
+                        </tr>
+                        <tr>
+                            <th>Editorial</th>
+                            <td>{{bdetails?.editorial}}</td>
+                        </tr>
+                        <tr>
+                            <th>Año</th>
+                            <td>{{bdetails?.year}}</td>
+                        </tr>
+                        <tr>
+                            <th>Paginas</th>
+                            <td>{{bdetails?.printLength}}</td>
+                        </tr>
+                        <tr>
+                            <th>Género</th>
+                            <td>{{bdetails?.genre}}</td>
+                        </tr>
+                        <tr>
+                            <th>Archivo</th>
+                            <td><a target="_blank" *ngIf="bdetails?.bookPath != null" href="{{bdetails?.bookPath}}"><i class="fa fa-download"></i>Descargar</a>
+                                <a target="_blank" *ngIf="bdetails?.bookPath == null" style="color:gray; pointer-events: none;"><i class="fa fa-download"></i>Descargar</a></td>
+                        </tr>
+                        <tr>
+                            <th>Autor(es)</th>
+                            <td *ngFor="let teacher of bdetails?.teacherBooks">
+                                    {{teacher.name}}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-</div>

@@ -1,63 +1,51 @@
-﻿<div class="panel panel-default container">
-    <div class="panel-body">
-        <div class="row">
-            <div class="panel-title">
-                <div class="col-md-12">
-                    <h3>{{rdetails?.title}}</h3>
-                </div>
+﻿<div class="container">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h2>{{rdetails?.title}}</h2>
             </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Codigo</strong></div>
-                <div class="col-md-6">{{rdetails?.code}}</div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong> Tipo de investigación</strong></div>
-                <div class="col-md-6">{{rdetails?.researchType}}</div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Fecha de edición</strong></div>
-                <div class="col-md-6">{{rdetails?.addedDate | date}}</div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong> Sector</strong></div>
-                <div class="col-md-6">{{rdetails?.sector}}</div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong> Inicio de investigación</strong></div>
-                <div class="col-md-6">{{rdetails?.initialPeriod}}</div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong> Final de investigación</strong></div>
-                <div class="col-md-6">{{rdetails?.finalPeriod}}</div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong> Duración de investigación (Años)</strong></div>
-                <div class="col-md-6">{{rdetails?.researchDuration}}</div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Archivo</strong></div>
-                <div class="col-md-6">
-                    <a target="_blank" *ngIf="rdetails?.researchPath != null" href="{{rdetails?.researchPath}}"><i class="fa fa-download"></i> Descargar</a>
-                    <a target="_blank" *ngIf="rdetails?.researchPath == null" style="color:gray; pointer-events: none;"><i class="fa fa-download"></i> Descargar</a>
-                </div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Autor(es)</strong></div>
-                <div class="col-md-6">
-                    <div *ngFor="let teacher of rdetails?.teacherResearch">
-                        {{teacher.name}}
-                    </div>
-                </div>
+            <div class="panel-body">
+                <table class="table table-striped">
+                    <tbody>
+                        <tr>
+                            <th>Código</th>
+                            <td>{{rdetails?.code}}</td>
+                        </tr>
+                        <tr>
+                            <th>Tipo de investigación</th>
+                            <td>{{rdetails?.researchType}}</td>
+                        </tr>
+                        <tr>
+                            <th>Fecha de edición</th>
+                            <td>{{rdetails?.addedDate | date}}</td>
+                        </tr>
+                        <tr>
+                            <th>Sector</th>
+                            <td>{{rdetails?.sector}}</td>
+                        </tr>
+                        <tr>
+                            <th>Inicio de investigación</th>
+                            <td>{{rdetails?.initialPeriod}}</td>
+                        </tr>
+                        <tr>
+                            <th>Final de investigación</th>
+                            <td>{{rdetails?.finalPeriod}}</td>
+                        </tr>
+                        <tr>
+                            <th>Duración de investigación (Años)</th>
+                            <td>{{rdetails?.researchDuration}}</td>
+                        </tr>
+                        <tr>
+                            <th>Archivo</th>
+                            <td><a target="_blank" *ngIf="rdetails?.researchPath != null" href="{{rdetails?.researchPath}}"><i class="fa fa-download"></i> Descargar</a>
+                                <a target="_blank" *ngIf="rdetails?.researchPath == null" style="color:gray; pointer-events: none;"><i class="fa fa-download"></i> Descargar</a></td>
+                        </tr>
+                        <tr>
+                            <th>Autor(es)</th>
+                            <td *ngFor="let teacher of rdetails?.teacherResearch">
+                                    {{teacher.name}}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-</div>

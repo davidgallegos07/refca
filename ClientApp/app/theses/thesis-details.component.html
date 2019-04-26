@@ -1,48 +1,39 @@
-<div class="panel panel-default container">
-    <div class="panel-body">
-        <div class="row">
-            <div class="panel-title">
-                <div class="col-md-12">
-                    <h3>{{thesis?.title}}</h3>
-                </div>
+<div class="container">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h2>{{thesis?.title}}</h2>
             </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Alumno</strong></div>
-                <div class="col-md-6">{{thesis?.studentName}}</div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Fecha de publicación</strong></div>
-                <div class="col-md-6">{{thesis?.publishedDate | date}}</div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Programa educativo</strong></div>
-                <div class="col-md-6">{{thesis?.educationProgram.name}}</div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Línea de investigación</strong></div>
-                <div class="col-md-6">{{thesis?.researchLine.name}}</div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Archivo</strong></div>
-                <div class="col-md-6">
-                    <a target="_blank" *ngIf="thesis?.thesisPath != null" href="{{thesis?.thesisPath}}"><i class="fa fa-download"></i> Descargar</a>
-                    <a target="_blank" *ngIf="thesis?.thesisPath == null" style="color:gray; pointer-events: none;"><i class="fa fa-download"></i> Descargar</a>
-                </div>
-            </div>
-            <div class="col-md-12">
-                <div class="divider"></div>
-                <div class="col-md-6"><strong>Director(es)</strong></div>
-                <div class="col-md-6">
-                    <div *ngFor="let teacher of thesis?.teacherTheses">
-                        {{teacher.name}}
-                    </div>
-                </div>
+            <div class="panel-body">
+                <table class="table table-striped">
+                    <tbody>
+                        <tr>
+                            <th>Alumno</th>
+                            <td>{{thesis?.studentName}}</td>
+                        </tr>
+                        <tr>
+                            <th>Fecha de publicación</th>
+                            <td>{{thesis?.publishedDate | date}}</td>
+                        </tr>
+                        <tr>
+                            <th>Programa educativo</th>
+                            <td>{{thesis?.educationProgram.name}}</td>
+                        </tr>
+                        <tr>
+                            <th>Línea de investigación</th>
+                            <td>{{thesis?.researchLine.name}}</td>
+                        </tr>
+                        <tr>
+                            <th>Archivo</th>
+                            <td><a target="_blank" *ngIf="thesis?.thesisPath != null" href="{{thesis?.thesisPath}}"><i class="fa fa-download"></i> Descargar</a>
+                                <a target="_blank" *ngIf="thesis?.thesisPath == null" style="color:gray; pointer-events: none;"><i class="fa fa-download"></i> Descargar</a></td>
+                        </tr>
+                        <tr>
+                            <th>Director(es)</th>
+                            <td *ngFor="let teacher of thesis?.teacherTheses">
+                                    {{teacher.name}}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-</div>
