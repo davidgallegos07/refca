@@ -28,14 +28,14 @@
                 <div class="form-group">
                     <label asp-for="Title" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
-                        <input asp-for="Title" class="form-control" />
+                        <input asp-for="Title" class="form-control" placeholder="ej. Cero papel"/>
                         <span asp-validation-for="Title" class="text-danger" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label asp-for="StudentName" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
-                        <input asp-for="StudentName" class="form-control" value="David Gallegos" />
+                        <input asp-for="StudentName" class="form-control" placeholder="ej. David Gallegos" />
                         <span asp-validation-for="StudentName" class="text-danger" />
                     </div>
                 </div>
@@ -58,7 +58,7 @@
                     <label asp-for="PublishedDate" class="col-md-2 control-label"></label>
                     <div class="col-md-10">
                         <div class="input-group date">
-                            <input asp-for="PublishedDate" class="form-control" /><span class="input-group-addon"><i class="glyphicon glyphicon-th"></i></span>
+                            <input asp-for="PublishedDate" class="form-control" placeholder="ej. 2019-01-01" /><span class="input-group-addon"><i class="glyphicon glyphicon-th"></i></span>
                         </div>
                         <span asp-validation-for="PublishedDate" class="text-danger" />
                     </div>
@@ -66,7 +66,7 @@
                 <div class="form-group">
                     <label class="col-md-2 control-label">Autor(es)</label>
                     <div class="col-md-10">
-                        <input id="teacher" class="typeahead form-control" type="text" placeholder="Docente..." />
+                        <input id="teacher" class="typeahead form-control" type="text" placeholder="ej. Alvaro De La Rocha" />
                     </div>
                 </div>
                 <div class="form-group">

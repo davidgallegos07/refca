@@ -20,7 +20,7 @@
             <div class="form-group">
                 <label asp-for="Name" class="col-md-2 control-label"></label>
                 <div class="col-md-10">
-                    <input asp-for="Name" class="form-control" />
+                    <input asp-for="Name" class="form-control" placeholder="ej. Alicia Alvarez"/>
                     <span asp-validation-for="Name" class="text-danger"></span>
                 </div>
             </div>
@@ -66,7 +66,7 @@
             <div class="form-group">
                 <label asp-for="TeacherCode" class="col-md-2 control-label"></label>
                 <div class="col-md-10">
-                    <input asp-for="TeacherCode" class="form-control" data-msg-number="Ingresa un número entero valido" data-rule-number="true" />
+                    <input asp-for="TeacherCode" class="form-control" data-msg-number="Ingresa un número entero valido" data-rule-number="true" placeholder="ej. " />
                     <span asp-validation-for="TeacherCode" class="text-danger" />
                 </div>
             </div>
