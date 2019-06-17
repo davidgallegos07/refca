@@ -1,128 +1,135 @@
 ﻿<div class="container search text-center">
     <div class="row search">
         <div class="col-sm-6 col-sm-offset-3">
-                <div class="input-group ">
-                        <input type="text" class="form-control test input-md" [(ngModel)]="query.searchTerm" (keyup.enter)="getAll()" >
-                        <span class="input-group-btn">
-                        <button (click)="getAll()" class="btn btn-primary test btn-md" type="button"><i class="fa fa-search" aria-hidden="true"></i></button>
-                        </span>
-                </div>
+            <div class="input-group ">
+                <input type="text" class="form-control test input-md" [(ngModel)]="query.searchTerm" (keyup.enter)="getAll()" >
+                <span class="input-group-btn">
+                <button (click)="getAll()" class="btn btn-link" type="button"><i class="fa fa-search" aria-hidden="true"></i></button>
+                </span>
+            </div>
         </div>
     </div>
 
-    <div *ngIf="hasArticles">
-            <div class="col-sm-4">
-                <div class="panel panel-primary">
-                <div class="panel-heading"><p class="text-left">Articulos</p> <p class="text-right">{{articles.totalItems}} Resultados</p></div>
+    <div class="container-research">
+        
+        <div *ngIf="hasArticles">
+            <div class="panel-research">
+                <div class="panel panel-default fade-in">
+                <div class="panel-heading "><b>Articulos</b></div>
                     <div class="panel-body"> 
                         <div *ngFor="let a of articles.items;  let i=index">
                             <div *ngIf="i<3">
-                                    <p class="text-left"><a [routerLink]="['/articles',a.id]"> {{a.title}}</a>. {{a.editionDate | date}}</p>
+                                <p class="text-left"><b><a [routerLink]="['/articles',a.id]">{{a.title}}</a></b>. {{a.editionDate | date}}</p>
+                                <hr *ngIf="i<2 && i<articles.totalItems-1 ">
                             </div>
                         </div>
                     </div>
-                    <div class="panel-footer">Ver catalogo de resultados</div>
                 </div>
             </div>
-    </div>
-    
-    <div *ngIf="hasChapterbooks">
-            <div class="col-sm-4">
-                    <div class="panel panel-primary">
-                    <div class="panel-heading"><p class="text-left">Capítulos de libro</p> <p class="text-right">{{chapterbooks.totalItems}} Resultados</p></div>
-                        <div class="panel-body"> 
-                            <div *ngFor="let cb of chapterbooks.items;  let i=index">
-                                <div *ngIf="i<3">
-                                        <p class="text-left"><a [routerLink]="['/chapterbooks',cb.id]"> {{cb.title}}</a>. {{cb.editionDate | date}}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="panel-footer">Ver catalogo de resultados</div>
-                    </div>
-             </div>
-    </div>
+        </div>
         
-    <div *ngIf="hasResearch">
-            <div class="col-sm-4">
-                    <div class="panel panel-primary">
-                    <div class="panel-heading"><p class="text-left">Investigaciones</p> <p class="text-right">{{research.totalItems}} Resultados</p></div>
-                        <div class="panel-body"> 
-                            <div *ngFor="let r of research.items;  let i=index">
-                                <div *ngIf="i<3">
-                                        <p class="text-left"><a [routerLink]="['/research',r.id]"> {{r.title}}</a>. {{r.editionDate | date}}</p>
-                                </div>
+        <div *ngIf="hasChapterbooks">
+            <div class="panel-research">
+                <div class="panel panel-default fade-in">
+                <div class="panel-heading"><b>Capítulos de libro</b></div>
+                    <div class="panel-body"> 
+                        <div *ngFor="let cb of chapterbooks.items;  let i=index">
+                            <div *ngIf="i<3">
+                                <p><a [routerLink]="['/chapterbooks',cb.id]"> {{cb.title}}</a>. {{cb.publishedDate | date}}</p>
+                                <hr *ngIf="i<2 && i<chapterbooks.totalItems-1">
                             </div>
                         </div>
-                        <div class="panel-footer">Ver catalogo de resultados</div>
                     </div>
-             </div>
-    </div>
+                </div>
+            </div>
+        </div>
+            
+        <div *ngIf="hasResearch">
+            <div class="panel-research">
+                <div class="panel panel-default fade-in">
+                <div class="panel-heading"><b>Investigaciones</b></div>
+                    <div class="panel-body"> 
+                        <div *ngFor="let r of research.items;  let i=index">
+                            <div *ngIf="i<3">
+                                <p class="text-left"><a [routerLink]="['/research',r.id]"> {{r.title}}</a>. {{r.addedDate | date}}</p>
+                                <hr *ngIf="i<2 && i<research.totalItems-1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        
-    <div *ngIf="hasBooks">
-            <div class="col-sm-4">
-                    <div class="panel panel-primary">
-                    <div class="panel-heading"><p class="text-left">Libros</p> <p class="text-right">{{books.totalItems}} Resultados</p></div>
-                        <div class="panel-body"> 
-                            <div *ngFor="let b of books.items;  let i=index">
-                                <div *ngIf="i<3">
-                                        <p class="text-left"><a [routerLink]="['/books',b.id]"> {{b.title}}</a>. {{b.editionDate | date}}</p>
-                                </div>
+            
+        <div *ngIf="hasBooks">
+            <div class="panel-research">
+                <div class="panel panel-default fade-in">
+                <div class="panel-heading"><b>Libros</b></div>
+                    <div class="panel-body"> 
+                        <div *ngFor="let b of books.items;  let i=index">
+                            <div *ngIf="i<3">
+                                <p class="text-left"><a [routerLink]="['/books',b.id]"> {{b.title}}</a>. {{b.editionDate | date}}</p>
+                                <hr *ngIf="i<2 && i<books.totalItems-1 ">
                             </div>
                         </div>
-                        <div class="panel-footer">Ver catalogo de resultados</div>
                     </div>
-             </div>
-    </div>
+                </div>
+            </div>
+        </div>
+            
+        <div *ngIf="hasPresentations">
+            <div class="panel-research">
+                <div class="panel panel-default fade-in">
+                <div class="panel-heading"><b>Presentaciones</b></div>
+                    <div class="panel-body"> 
+                        <div *ngFor="let p of presentations.items;  let i=index">
+                            <div *ngIf="i<3">
+                                <p class="text-left"><a [routerLink]="['/presentations',p.id]"> {{p.title}}</a>. {{p.editionDate | date}}</p>
+                                <hr *ngIf="i<2 && i<presentations.totalItems-1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+                
+        <div *ngIf="hasMagazines">
+            <div class="panel-research">
+                <div class="panel panel-default fade-in">
+                <div class="panel-heading"><b>Revistas</b></div>
+                    <div class="panel-body"> 
+                        <div *ngFor="let m of magazines.items;  let i=index">
+                            <div *ngIf="i<3">
+                                <p class="text-left"><a [routerLink]="['/magazines',m.id]"> {{m.title}}</a>. {{m.editionDate | date}}</p>
+                                <hr *ngIf="i<2 && i<magazines.totalItems-1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     
-    <div *ngIf="hasPresentations">
-            <div class="col-sm-4">
-                    <div class="panel panel-primary">
-                    <div class="panel-heading"><p class="text-left">Presentaciones</p> <p class="text-right">{{presentations.totalItems}} Resultados</p></div>
-                        <div class="panel-body"> 
-                            <div *ngFor="let p of presentations.items;  let i=index">
-                                <div *ngIf="i<3">
-                                        <p class="text-left"><a [routerLink]="['/presentations',p.id]"> {{p.title}}</a>. {{p.editionDate | date}}</p>
-                                </div>
+        <div *ngIf="hasTheses">
+            <div class="panel-research">
+                <div class="panel panel-default fade-in">
+                <div class="panel-heading"><b>Tesis</b></div>
+                    <div class="panel-body"> 
+                        <div *ngFor="let t of theses.items;  let i=index">
+                            <div *ngIf="i<3">
+                                <p class="text-left"><a [routerLink]="['/theses',t.id]"> {{t.title}}</a>. {{t?.publishedDate | date}}</p>
+                                <hr *ngIf="i<2 && i<theses.totalItems-1">
                             </div>
                         </div>
-                        <div class="panel-footer">Ver catalogo de resultados</div>
                     </div>
-             </div>
-    </div>
-         
-    <div *ngIf="hasMagazines">
-            <div class="col-sm-4">
-                    <div class="panel panel-primary">
-                    <div class="panel-heading"><p class="text-left">Revistas</p> <p class="text-right">{{magazines.totalItems}} Resultados</p></div>
-                        <div class="panel-body"> 
-                            <div *ngFor="let m of magazines.items;  let i=index">
-                                <div *ngIf="i<3">
-                                        <p class="text-left"><a [routerLink]="['/magazines',m.id]"> {{m.title}}</a>. {{m.editionDate | date}}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="panel-footer">Ver catalogo de resultados</div>
-                    </div>
-             </div>
-    </div>
+                </div>
+            </div>
+        </div>
 
-    <div *ngIf="hasTheses">
-            <div class="col-sm-4">
-                    <div class="panel panel-primary">
-                    <div class="panel-heading"><p class="text-left">Tesis</p> <p class="text-right">{{theses.totalItems}} Resultados</p></div>
-                        <div class="panel-body"> 
-                            <div *ngFor="let t of theses.items;  let i=index">
-                                <div *ngIf="i<3">
-                                        <p class="text-left"><a [routerLink]="['/theses',t.id]"> {{t.title}}</a>. {{t?.publishedDate | date}}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="panel-footer">Ver catalogo de resultados</div>
-                    </div>
-             </div>
+        <!-- <div class="well fade-in" *ngIf="!hasResults">
+            No se encontraron resultados.
+        </div> -->
+
     </div>
-         
 </div>
 
 <div class="text-center text-white hero">
